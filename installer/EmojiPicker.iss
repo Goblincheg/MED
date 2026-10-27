@@ -5,7 +5,7 @@
 ;     --self-contained true); end users need nothing extra installed.
 ;     ISCC.exe /DAppVersion=0.1.5 /DPublishDir=<publish> installer\EmojiPicker.iss
 ;   Lite - expects a framework-dependent publish (--self-contained false), a much
-;     smaller download that requires the .NET Desktop Runtime 8 (x64). Setup checks
+;     smaller download that requires the .NET Desktop Runtime 10 (x64). Setup checks
 ;     for the runtime and points at the download page when it is missing.
 ;     ISCC.exe /DAppVersion=0.1.5 /DPublishDir=<publish-fd> /DFrameworkDependent=1 installer\EmojiPicker.iss
 ;
@@ -24,7 +24,7 @@
 
 #ifndef PublishDir
   ; Default to the conventional publish output relative to this script
-  #define PublishDir "..\EmojiPicker\bin\Release\net8.0-windows\win-x64\publish"
+  #define PublishDir "..\EmojiPicker\bin\Release\net10.0-windows\win-x64\publish"
 #endif
 
 #define AppName "Classic Emoji Picker"
@@ -101,13 +101,13 @@ const
 
 #ifdef FrameworkDependent
 const
-  RuntimeDownloadUrl = 'https://dotnet.microsoft.com/download/dotnet/8.0';
+  RuntimeDownloadUrl = 'https://dotnet.microsoft.com/download/dotnet/10.0';
 
 // The lite build carries no runtime of its own: it needs the .NET Desktop
-// Runtime 8 (x64). The runtime installer registers each version as a value
-// (e.g. "8.0.27") under this key in the 32-bit registry view; fall back to
+// Runtime 10 (x64). The runtime installer registers each version as a value
+// (e.g. "10.0.12") under this key in the 32-bit registry view; fall back to
 // probing the shared-framework directory on disk.
-function IsDesktopRuntime8Installed(): Boolean;
+function IsDesktopRuntime10Installed(): Boolean;
 var
   Names: TArrayOfString;
   I: Integer;
@@ -120,15 +120,15 @@ begin
     Names) then
   begin
     for I := 0 to GetArrayLength(Names) - 1 do
-      if Copy(Names[I], 1, 2) = '8.' then
+      if Copy(Names[I], 1, 3) = '10.' then
       begin
         Result := True;
         exit;
       end;
   end;
 
-  // Registry missing/incomplete: look for an 8.x folder on disk instead
-  if FindFirst(ExpandConstant('{commonpf64}\dotnet\shared\Microsoft.WindowsDesktop.App\8.*'), FindRec) then
+  // Registry missing/incomplete: look for a 10.x folder on disk instead
+  if FindFirst(ExpandConstant('{commonpf64}\dotnet\shared\Microsoft.WindowsDesktop.App\10.*'), FindRec) then
   begin
     try
       Result := True;
@@ -148,11 +148,11 @@ begin
   Result := True;
 
 #ifdef FrameworkDependent
-  if not IsDesktopRuntime8Installed() then
+  if not IsDesktopRuntime10Installed() then
   begin
-    if MsgBox('This lite installer requires the .NET Desktop Runtime 8 (x64), '
+    if MsgBox('This lite installer requires the .NET Desktop Runtime 10 (x64), '
       + 'which was not found on this computer.' #13#10 #13#10
-      + 'Open the Microsoft download page now? Install ".NET Desktop Runtime 8" '
+      + 'Open the Microsoft download page now? Install ".NET Desktop Runtime 10" '
       + 'from there, then run this setup again.' #13#10 #13#10
       + '(Alternatively, download the full Classic Emoji Picker installer '
       + 'instead - it includes everything and needs no separate runtime.)',

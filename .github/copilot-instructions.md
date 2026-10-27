@@ -14,8 +14,8 @@ See Project README.md
 2. Ship a self-contained executable that needs nothing installed beyond what Windows 11 already provides (the emoji font). Library dependencies (Emoji.Wpf, VirtualizingWrapPanel) are bundled into the build, not required on the machine
 
 ## Technical Stack & Decisions
-- **Framework**: WPF with .NET 8 (modern, performant, included with Windows 11)
-- **Language**: C# 12 with modern language features
+- **Framework**: WPF with .NET 10 (runtime bundled in self-contained builds)
+- **Language**: C# with modern language features
 - **UI**: XAML with custom styling to match Windows 10 design
 - **Emoji Rendering**: Emoji.Wpf NuGet package (colour emoji via the system Segoe UI Emoji font)
 - **Target Platform**: Windows 11 (resident system-tray app that takes over Win+.)
@@ -35,8 +35,8 @@ See Project README.md
 
 ## Development Environment
 - User has: Visual Studio Enterprise, VS Code, Windows 11, GitHub account
-- Project targets: .NET 8 (modern SDK-style project)
-- Building with: Standard Visual Studio 2022 WPF workflow
+- Project targets: .NET 10 (modern SDK-style project)
+- Building with: .NET SDK 10.0.401 CLI workflow
 
 ## Key Design Principles
 - **Simplicity**: Zero bloat, just emoji picking functionality
@@ -63,5 +63,5 @@ See Project README.md
 
 ## File Dependencies
 - **Segoe UI Emoji**: System font used for rendering (ships with Windows 10 1809+ / Windows 11)
-- **Visual Studio 2022**: Primary development environment (VS Code and VS 2019 may work)
-- **.NET 8 (and SDK)**: Must be installed (may need separate download)
+- **Development environment**: .NET SDK 10.0.401 CLI or an IDE with .NET 10 support
+- **.NET 10 (and SDK)**: Must be installed (may need separate download)

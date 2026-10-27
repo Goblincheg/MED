@@ -4,7 +4,7 @@
 
 **Release Date**: 2026-07-22
 **Build**: Release
-**Target Framework**: .NET 8.0-windows
+**Target Framework**: .NET 10.0-windows
 **Architecture**: x64 (self-contained; a framework-dependent "lite" build is also published)
 
 ### Version Details
@@ -25,7 +25,7 @@
 
 ### Compatibility
 - **OS**: Windows 11, Windows 10 (version 1809+)
-- **Runtime**: Self-contained builds need nothing extra; lite builds need the .NET Desktop Runtime 8 (x64)
+- **Runtime**: Self-contained builds need nothing extra; lite builds need the .NET Desktop Runtime 10 (x64)
 - **Emoji Font**: System Segoe UI Emoji (ships with supported Windows versions)
 
 ### Known Issues

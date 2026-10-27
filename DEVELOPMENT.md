@@ -5,8 +5,8 @@
 ### **Local Development Setup**
 
 1. **Install Prerequisites:**
-   - Visual Studio 2022 or VS Code with C# extension
-   - .NET 8 SDK
+   - An editor or IDE with .NET 10 support
+   - .NET SDK 10.0.401
    - Git for Windows
 
 2. **Clone and Setup:**
@@ -149,7 +149,7 @@ git push origin v0.x.x
 ### **Troubleshooting**
 
 #### **Common Issues**
-- **Build Fails:** Check .NET 8 SDK installation
+- **Build Fails:** Check .NET SDK 10.0.401 installation
 - **Emoji Render as Monochrome/Boxes:** Ensure the system Segoe UI Emoji font is present (bundled with Windows 10 1809+)
 - **Formatting Errors:** Run `dotnet format` to auto-fix
 - **Picker doesn't appear on Win+.:** Enable debug logging (tray menu → **Debug logging**) and inspect `%APPDATA%\ClassicEmojiPicker\debug.log` - the `PositionNearCursor`/`ShowPicker done` lines record the anchor (caret vs mouse), computed coordinates, and DPI scale

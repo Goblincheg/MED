@@ -43,8 +43,8 @@ This version includes core functionality and is ready for daily use:
 ## Requirements
 
 - Windows 11 (or Windows 10 version 1809+)
-- The full installer is self-contained - no separate .NET runtime is required (the lite installer needs the [.NET Desktop Runtime 8 x64](https://dotnet.microsoft.com/download/dotnet/8.0))
-- For building from source: .NET 8 SDK and Visual Studio 2022 or VS Code with the C# extension
+- The full installer is self-contained - no separate .NET runtime is required (the lite installer needs the [.NET Desktop Runtime 10 x64](https://dotnet.microsoft.com/download/dotnet/10.0))
+- For building from source: .NET SDK 10.0.401 (command-line build)
 
 ## Installation
 
@@ -52,7 +52,7 @@ This version includes core functionality and is ready for daily use:
 
 1. Download an installer from the [Releases](../../releases) page (artifacts are named `Classic-EmojiPicker-v<version>-<type>-win-x64.<ext>`):
    - `Classic-EmojiPicker-v<version>-setup-win-x64.exe` - **full**: includes the .NET runtime, needs nothing else (larger download)
-   - `Classic-EmojiPicker-v<version>-setup-lite-win-x64.exe` - **lite**: much smaller, but requires the [.NET Desktop Runtime 8 (x64)](https://dotnet.microsoft.com/download/dotnet/8.0) to be installed (setup checks for it and offers the download page if it's missing)
+   - `Classic-EmojiPicker-v<version>-setup-lite-win-x64.exe` - **lite**: much smaller, but requires the [.NET Desktop Runtime 10 (x64)](https://dotnet.microsoft.com/download/dotnet/10.0) to be installed (setup checks for it and offers the download page if it's missing)
    - `Classic-EmojiPicker-v<version>-setup-win-x64.msi` - **MSI**: self-contained, installs per-machine; made for silent/enterprise deployment (see below)
 2. Run it. The Setup.exe installers ask whether to install for **all users** (elevates, installs to Program Files) or **just you** (no administrator prompt).
 3. Tick **Start with Windows** when asked so Win+. works after every sign-in.
@@ -231,8 +231,8 @@ We welcome contributions! Please follow these guidelines:
 ### **Development Setup**
 1. Fork the repository
 2. Clone your fork: `git clone https://github.com/platima/Classic-EmojiPicker.git`
-3. Open in Visual Studio 2022 or VS Code
-4. Ensure .NET 8 SDK is installed
+3. Use the .NET 10 CLI or an IDE with .NET 10 support
+4. Ensure .NET 10 SDK is installed
 
 ### **Code Quality Standards**
 Before submitting, ensure your code meets quality standards:
@@ -264,7 +264,7 @@ dotnet build --configuration Release
 - ✅ Update CHANGELOG.md if needed
 
 ### **Code Style**
-- **Language**: C# 12 with modern features
+- **Language**: C# with modern features
 - **Formatting**: Enforced by `.editorconfig` and `dotnet format`
 - **Naming**: PascalCase for public members, camelCase for private
 - **Comments**: Australian English, clear and concise
@@ -299,7 +299,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Colour emoji rendering by [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (Sam Hocevar)
 - Grid virtualization by [VirtualizingWrapPanel](https://github.com/sbaeumlisberger/VirtualizingWrapPanel) (S. Bäumlisberger)
 - Search keyword data from [emojibase](https://github.com/milesj/emojibase) (MIT), derived from Unicode CLDR
-- Built with WPF and .NET 8.0
+- Built with WPF and .NET 10.0
 
 ## Why This Project?
 

@@ -37,6 +37,6 @@ echo Self-contained: publish\win-x64\EmojiPicker.exe
 echo Portable:       publish\portable\EmojiPicker.exe
 echo.
 echo The self-contained version includes all dependencies.
-echo The portable version requires .NET 8 to be installed.
+echo The portable version requires .NET 10 to be installed.
 echo.
 pause
