@@ -6,6 +6,21 @@ licence, reproduced or linked below.
 
 ## Bundled data
 
+### Russian annotations: Unicode CLDR 48
+- **Used for:** names and keyword phrases in `EmojiPicker/Resources/keywords.ru.json`.
+- **Source:** https://github.com/unicode-org/cldr/tree/release-48/common/annotations
+  and https://github.com/unicode-org/cldr/tree/release-48/common/annotationsDerived
+  (`ru.xml` in each directory).
+- **Author:** Unicode, Inc. and contributors.
+- **Licence:** Unicode License V3 (SPDX: Unicode-3.0); the complete licence is
+  included in `licenses/CLDR-48-LICENSE.txt` and copied to build/publish output.
+- **Reproduction:** `tools/Import-RussianAnnotations.ps1` verifies the SHA-256
+  of each source file. Source hashes and coverage are documented in
+  `docs/RUSSIAN-SEARCH.md`.
+- **Local additions:** `tools/russian-aliases.json` and
+  `tools/russian-supplement.json` are original project contributions under
+  this project's MIT licence, not additional CLDR translations.
+
 ### emojibase
 - **Used for:** the search keyword/tag data in `EmojiPicker/Resources/keywords.json`
   (merged with emojilib, below), generated from emojibase's annotations

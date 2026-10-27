@@ -358,6 +358,7 @@ namespace EmojiPicker
             // Build the full emoji set from the Unicode database that ships
             // inside Emoji.Wpf, mapped onto the Windows 10 categories
             var keywords = LoadResourceMap<string>("keywords.json");
+            var russian = LoadResourceMap<RussianAnnotation>("keywords.ru.json");
             var popularity = LoadResourceMap<int>("popularity.json");
             allEmojis = new List<Emoji>();
             foreach (var group in WpfEmojiData.AllGroups)
@@ -378,8 +379,10 @@ namespace EmojiPicker
                         {
                             var normalized = NormalizeEmoji(emoji.Text);
                             keywords.TryGetValue(normalized, out var tags);
+                            russian.TryGetValue(normalized, out var russianAnnotation);
                             var rank = popularity.TryGetValue(normalized, out var tier) ? tier : UnrankedPopularity;
-                            allEmojis.Add(new Emoji(emoji.Text, emoji.Name, key, tags ?? string.Empty, rank));
+                            allEmojis.Add(new Emoji(emoji.Text, emoji.Name, key, tags ?? string.Empty, rank,
+                                russianAnnotation?.Name ?? string.Empty, russianAnnotation?.Keywords));
                         }
                     }
                 }
@@ -394,7 +397,7 @@ namespace EmojiPicker
         {
             try
             {
-                var uri = new Uri($"pack://application:,,,/Resources/{fileName}");
+                var uri = new Uri($"pack://application:,,,/EmojiPicker;component/Resources/{fileName}");
                 using var stream = Application.GetResourceStream(uri)?.Stream;
                 if (stream != null)
                 {
@@ -514,66 +517,11 @@ namespace EmojiPicker
                 return;
             }
 
-            // Rank matches by quality, then by real-world usage:
-            //  - word-start matches (name or keyword) come before mid-word ones
-            //  - within that, order by Unicode usage-frequency tier, with
-            //    keyword-only matches handicapped one tier so a hidden tag needs
-            //    to be genuinely more popular to outrank a visible name match
-            //    (e.g. "spl": 💦's "splash" keyword beats 🖐️ "…fingers splayed",
-            //    but "whi": ⚪ "white circle" still beats 💟's "white" tag)
-            var scored = new List<(Emoji Emoji, int Tier, int Score, bool IsName, int Index)>();
-            for (var i = 0; i < allEmojis.Count; i++)
-            {
-                var emoji = allEmojis[i];
-                var nameWordStart = HasWordStartMatch(emoji.Name, searchText);
-                var keywordWordStart = HasWordStartMatch(emoji.Keywords, searchText);
-                var nameContains = nameWordStart || emoji.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase);
-                var keywordContains = keywordWordStart || emoji.Keywords.Contains(searchText, StringComparison.OrdinalIgnoreCase);
-
-                if (!nameContains && !keywordContains)
-                {
-                    continue;
-                }
-
-                var tier = nameWordStart || keywordWordStart ? 0 : 1;
-                var isName = tier == 0 ? nameWordStart : nameContains;
-                var score = emoji.Popularity + (isName ? 0 : 1);
-                scored.Add((emoji, tier, score, isName, i));
-            }
-
-            var filteredEmojis = scored
-                .OrderBy(match => match.Tier)
-                .ThenBy(match => match.Score)
-                .ThenByDescending(match => match.IsName)
-                .ThenBy(match => match.Index)
-                .Select(match => match.Emoji)
-                .ToList();
-
-            Logger.Log($"Search '{searchText}' -> {scored.Count(match => match.Tier == 0)} word-start + " +
-                $"{scored.Count(match => match.Tier == 1)} substring; top: " +
-                string.Join(", ", filteredEmojis.Take(3).Select(emoji => emoji.Name)));
+            var filteredEmojis = EmojiSearch.Find(allEmojis, searchText);
+            Logger.Log($"Search '{searchText}' -> {filteredEmojis.Count} results");
             CategoryHeader.Text = SearchHeader;
             ShowEmojis(filteredEmojis);
         }
-
-        // True when the query appears at the start of any word (words separated
-        // by spaces or hyphens, as in Unicode names and emojibase tags)
-        private static bool HasWordStartMatch(string text, string query)
-        {
-            var index = text.IndexOf(query, StringComparison.OrdinalIgnoreCase);
-            while (index >= 0)
-            {
-                if (index == 0 || text[index - 1] == ' ' || text[index - 1] == '-')
-                {
-                    return true;
-                }
-
-                index = text.IndexOf(query, index + 1, StringComparison.OrdinalIgnoreCase);
-            }
-
-            return false;
-        }
-
         private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             // While an IME is composing (CJK etc.), Enter commits the candidate and
@@ -867,18 +815,23 @@ namespace EmojiPicker
 
         /// <summary>Extra search terms (emojibase tags), e.g. "splash" for 💦.</summary>
         public string Keywords { get; }
+        public string RussianName { get; }
+        public string[] RussianKeywords { get; }
 
         /// <summary>Usage-popularity tier from Unicode's frequency data
         /// (0 = most used); unranked emoji get a large sentinel value.</summary>
         public int Popularity { get; }
 
-        public Emoji(string character, string name, string category, string keywords, int popularity)
+        public Emoji(string character, string name, string category, string keywords, int popularity,
+            string russianName = "", string[]? russianKeywords = null)
         {
             Character = character;
             Name = name;
             Category = category;
             Keywords = keywords;
             Popularity = popularity;
+            RussianName = russianName;
+            RussianKeywords = russianKeywords ?? Array.Empty<string>();
         }
 
         // Shown by UI Automation / screen readers for the grid items

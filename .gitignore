@@ -383,3 +383,6 @@ EmojiPicker/Fonts/
 *.sln.docstates
 ours.png
 w10.png
+
+# Local upstream Fluent Emoji collection (audit/reference only)
+external/fluentui-emoji-main/

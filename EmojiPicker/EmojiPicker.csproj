@@ -42,6 +42,7 @@
          annotations derived from Unicode CLDR) and emojilib (MIT, community
          associations like "laugh" for 😅, similar to the Windows 10 panel) -->
     <Resource Include="Resources\keywords.json" />
+    <Resource Include="Resources\keywords.ru.json" />
     <!-- Usage-popularity tier (0 = most used) keyed by emoji; parsed from
          Unicode's published emoji-frequency data
          (https://home.unicode.org/emoji/emoji-frequency/), supplemented with
@@ -53,6 +54,11 @@
   <ItemGroup>
     <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
     <PackageReference Include="VirtualizingWrapPanel" Version="2.5.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\licenses\CLDR-48-LICENSE.txt" Link="licenses\CLDR-48-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- Trade a little allocation speed for a smaller retained heap (0-9; higher
