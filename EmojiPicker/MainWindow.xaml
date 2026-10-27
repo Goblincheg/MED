@@ -1,0 +1,244 @@
+<Window x:Class="EmojiPicker.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
+        xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
+        Title="Classic Emoji Picker"
+        Height="440"
+        Width="400"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen"
+        Topmost="True"
+        ShowActivated="True"
+        Background="Transparent"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="Auto"
+        UseLayoutRounding="True"
+        ShowInTaskbar="False"
+        MouseLeftButtonDown="MainWindow_MouseLeftButtonDown"
+        PreviewKeyDown="MainWindow_PreviewKeyDown"
+        Deactivated="MainWindow_Deactivated"
+        Loaded="MainWindow_Loaded">
+
+    <Window.Resources>
+        <!-- Category tab (bottom strip) -->
+        <Style x:Key="TabItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="ToolTip" Value="{Binding DisplayName}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Root"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0,0,0,2"
+                                Padding="0,8">
+                            <Image emoji:Image.Source="{Binding Icon}"
+                                   Width="23" Height="23"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <EventSetter Event="PreviewMouseLeftButtonUp" Handler="TabItem_MouseLeftButtonUp"/>
+        </Style>
+
+        <!-- Emoji cell in the grid -->
+        <Style x:Key="EmojiItemStyle" TargetType="ListBoxItem">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="ToolTip" Value="{Binding Name}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <!-- Windows 10 style: a filled highlight square (no border
+                             stroke), with the glyph filling most of the cell -->
+                        <Border x:Name="Root"
+                                Width="40" Height="40"
+                                Margin="1"
+                                Background="Transparent"
+                                CornerRadius="2">
+                            <Image emoji:Image.Source="{Binding Character}"
+                                   Width="32" Height="32"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource HoverBrush}"/>
+                            </Trigger>
+                            <!-- After IsMouseOver so selection wins when both apply -->
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource SelectionBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <EventSetter Event="PreviewMouseLeftButtonUp" Handler="EmojiItem_MouseLeftButtonUp"/>
+        </Style>
+
+        <!-- Minimal theme-aware scrollbar so the dark grid doesn't show a light track -->
+        <Style x:Key="ThemedScrollBar" TargetType="ScrollBar">
+            <Setter Property="Width" Value="10"/>
+            <Setter Property="Background" Value="{DynamicResource ScrollBarBackgroundBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Border Background="{TemplateBinding Background}">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.Thumb>
+                                    <Thumb>
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="{DynamicResource ScrollBarThumbBrush}"
+                                                        CornerRadius="4" Margin="2,0"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageDownCommand" Opacity="0" Focusable="False"/>
+                                </Track.IncreaseRepeatButton>
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="ScrollBar.PageUpCommand" Opacity="0" Focusable="False"/>
+                                </Track.DecreaseRepeatButton>
+                            </Track>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Grid>
+        <!-- Main container with rounded corners and shadow -->
+        <Border Background="{DynamicResource WindowBackgroundBrush}"
+                CornerRadius="8"
+                BorderBrush="{DynamicResource WindowBorderBrush}"
+                BorderThickness="1">
+            <Border.Effect>
+                <DropShadowEffect Color="Black" Direction="315" ShadowDepth="3" Opacity="0.3" BlurRadius="5"/>
+            </Border.Effect>
+
+            <Grid Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Search Box with watermark -->
+                <Grid Grid.Row="0" Margin="10,10,28,5">
+                    <TextBox x:Name="SearchBox"
+                             Padding="8"
+                             FontSize="12"
+                             Background="{DynamicResource SearchBackgroundBrush}"
+                             Foreground="{DynamicResource SearchForegroundBrush}"
+                             CaretBrush="{DynamicResource SearchForegroundBrush}"
+                             BorderBrush="{DynamicResource SearchBorderBrush}"
+                             BorderThickness="1"
+                             TextChanged="SearchBox_TextChanged"/>
+                    <TextBlock Text="Keep typing to find an emoji"
+                               FontSize="12"
+                               Foreground="{DynamicResource WatermarkForegroundBrush}"
+                               Margin="10,0,0,0"
+                               VerticalAlignment="Center"
+                               IsHitTestVisible="False">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+
+                <!-- Category header -->
+                <TextBlock x:Name="CategoryHeader"
+                           Grid.Row="1"
+                           Margin="12,4,12,2"
+                           FontSize="12"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource HeaderForegroundBrush}"/>
+
+                <!-- Emoji Grid (UI-virtualized: only visible cells are realized) -->
+                <ListBox x:Name="EmojiGrid"
+                         Grid.Row="2"
+                         Margin="5,2,5,8"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Focusable="False"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.CanContentScroll="True"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         ItemContainerStyle="{StaticResource EmojiItemStyle}">
+                    <ListBox.Resources>
+                        <Style TargetType="ScrollBar" BasedOn="{StaticResource ThemedScrollBar}"/>
+                    </ListBox.Resources>
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <vwp:VirtualizingWrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                </ListBox>
+
+                <!-- Category Tabs at Bottom -->
+                <ListBox x:Name="CategoryTabs"
+                         Grid.Row="3"
+                         Height="42"
+                         Background="{DynamicResource TabStripBackgroundBrush}"
+                         BorderThickness="0"
+                         Focusable="False"
+                         HorizontalAlignment="Stretch"
+                         Padding="0"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                         ItemContainerStyle="{StaticResource TabItemStyle}"
+                         SelectionChanged="CategoryTabs_SelectionChanged">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <!-- One row, evenly divided: the 7 category tabs fill
+                                 the full strip width instead of packing left -->
+                            <UniformGrid Rows="1"/>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                </ListBox>
+            </Grid>
+        </Border>
+
+        <!-- Close Button (top-right corner) -->
+        <Button HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="0,8,8,0"
+                Width="20"
+                Height="20"
+                Content="×"
+                FontSize="14"
+                FontFamily="Segoe UI"
+                Foreground="{DynamicResource CloseForegroundBrush}"
+                Background="Transparent"
+                BorderBrush="Transparent"
+                Click="CloseButton_Click"
+                Cursor="Hand"/>
+    </Grid>
+</Window>

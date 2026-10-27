@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v5
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Format Check
+      run: dotnet format --verify-no-changes
+
+    - name: Upload build output
+      uses: actions/upload-artifact@v7
+      with:
+        name: EmojiPicker-build
+        path: EmojiPicker/bin/Release/net8.0-windows/
+        if-no-files-found: error

@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon>Resources\app.ico</ApplicationIcon>
+
+    <!-- Code Analysis -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+
+    <!-- Resident tray app: prefer a small heap over GC throughput -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+
+    <!-- Application Info -->
+    <AssemblyTitle>Classic Emoji Picker</AssemblyTitle>
+    <AssemblyDescription>Lightweight classic-style emoji picker for Windows</AssemblyDescription>
+    <AssemblyProduct>Classic Emoji Picker</AssemblyProduct>
+    <AssemblyCopyright>Copyright © Platima 2025-2026</AssemblyCopyright>
+    <AssemblyVersion>0.1.9.0</AssemblyVersion>
+    <FileVersion>0.1.9.0</FileVersion>
+    <Version>0.1.9</Version>
+    <InformationalVersion>0.1.9</InformationalVersion>
+  </PropertyGroup>
+
+  <!-- WinForms is only used for the tray icon (App.xaml.cs imports it explicitly);
+       drop the implicit global using so its types don't clash with WPF's -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
+  <!-- Embed the icon so it can be loaded at runtime for the tray via pack URI,
+       in addition to being the executable's icon (ApplicationIcon above) -->
+  <ItemGroup>
+    <Resource Include="Resources\app.ico" />
+    <!-- Emoji search keywords/tags keyed by emoji; union of emojibase (MIT,
+         annotations derived from Unicode CLDR) and emojilib (MIT, community
+         associations like "laugh" for 😅, similar to the Windows 10 panel) -->
+    <Resource Include="Resources\keywords.json" />
+    <!-- Usage-popularity tier (0 = most used) keyed by emoji; parsed from
+         Unicode's published emoji-frequency data
+         (https://home.unicode.org/emoji/emoji-frequency/), supplemented with
+         popular post-2018 emoji absent from that dataset. Search results are
+         ordered by these tiers within each match class. -->
+    <Resource Include="Resources\popularity.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
+    <PackageReference Include="VirtualizingWrapPanel" Version="2.5.2" />
+  </ItemGroup>
+
+  <!-- Trade a little allocation speed for a smaller retained heap (0-9; higher
+       conserves more). Keeps the resident (idle-in-tray) footprint modest. -->
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="6" />
+  </ItemGroup>
+
+</Project>
