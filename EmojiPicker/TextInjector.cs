@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EmojiPicker
@@ -13,10 +14,48 @@ namespace EmojiPicker
     /// </summary>
     internal static class TextInjector
     {
+        internal readonly record struct Target(IntPtr Window, IntPtr Focus, uint Process, uint Thread)
+        {
+            internal static Target Capture(IntPtr window, IntPtr focus)
+            {
+                var thread = NativeMethods.GetWindowThreadProcessId(window, out var process);
+                return new Target(window, focus, process, thread);
+            }
+
+            internal bool IsValid()
+            {
+                if (Window == IntPtr.Zero || Focus == IntPtr.Zero || Process == 0 || Thread == 0
+                    || Process == (uint)Environment.ProcessId || !NativeMethods.IsWindow(Window)
+                    || !NativeMethods.IsWindow(Focus))
+                {
+                    return false;
+                }
+                var thread = NativeMethods.GetWindowThreadProcessId(Window, out var process);
+                var focusThread = NativeMethods.GetWindowThreadProcessId(Focus, out var focusProcess);
+                return process == Process && thread == Thread && focusProcess == Process
+                    && focusThread == Thread && (Focus == Window || NativeMethods.IsChild(Window, Focus));
+            }
+
+            internal bool HasFocus()
+            {
+                if (!IsValid() || NativeMethods.GetForegroundWindow() != Window) { return false; }
+                var gui = new NativeMethods.GUITHREADINFO { cbSize = Marshal.SizeOf<NativeMethods.GUITHREADINFO>() };
+                return NativeMethods.GetGUIThreadInfo(Thread, ref gui) && gui.hwndFocus == Focus;
+            }
+        }
+
         // Whether this process runs elevated; injection into an elevated target
         // from a non-elevated process is silently discarded by UIPI, so we
-        // detect that case and fall back to the clipboard instead
+        // detect that case and report failure without changing the clipboard
         private static readonly bool SelfElevated = IsSelfElevated();
+        private static Action? pendingClipboardRestore;
+
+        internal static void FinishPendingClipboardRestore()
+        {
+            var restore = pendingClipboardRestore;
+            pendingClipboardRestore = null;
+            restore?.Invoke();
+        }
 
         /// <summary>
         /// Returns the control that currently has keyboard focus within
@@ -86,52 +125,58 @@ namespace EmojiPicker
         }
 
         /// <summary>
-        /// Attempts to focus <paramref name="targetWindow"/> and type <paramref name="text"/> into it.
-        /// <paramref name="focusWindow"/> is the child control that had keyboard focus before the
-        /// picker opened; focus is restored to it so text lands in the right place. Returns false
-        /// when there is no usable target (the window is gone, or it is elevated and we are not -
-        /// UIPI would silently discard the injected input), so the caller can fall back to the
-        /// clipboard. Must be awaited on the UI thread; the focus-settle delay is non-blocking.
+        /// Restores the captured target and focused control, validating both again
+        /// immediately before input. Returns false for an unknown, changed or
+        /// inaccessible recipient; the caller reports failure. Must be awaited on
+        /// the UI thread. Cancellation prevents pending input, but clipboard
+        /// restoration after an already-sent paste always completes.
         /// </summary>
-        public static async Task<bool> TryInsertAsync(IntPtr targetWindow, IntPtr focusWindow, string text)
+        internal static async Task<bool> TryInsertAsync(Target target, string text, CancellationToken cancellationToken,
+            Action<string>? trace = null)
         {
-            if (targetWindow == IntPtr.Zero || !NativeMethods.IsWindow(targetWindow))
+            trace?.Invoke("target-insert-enter");
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!target.IsValid())
             {
                 return false;
             }
 
-            if (!SelfElevated && IsWindowElevated(targetWindow))
+            if (!SelfElevated && IsWindowElevated(target.Window))
             {
-                Logger.Log("Insert target is elevated; UIPI would drop the input - using clipboard");
+                Logger.Log("Insert target is elevated; refusing input");
                 return false;
             }
 
-            if (!NativeMethods.SetForegroundWindow(targetWindow))
+            trace?.Invoke("programmatic-target-focus-begin");
+            if (!NativeMethods.SetForegroundWindow(target.Window))
             {
+                trace?.Invoke("programmatic-target-focus-rejected");
                 return false;
             }
 
             // Restore focus to the exact control that had it; activating our picker
             // moves focus off edits like Explorer's Search box or address bar
-            RestoreFocus(targetWindow, focusWindow);
+            RestoreFocus(target.Window, target.Focus);
+            trace?.Invoke("programmatic-target-focus-return");
 
             // Wait for the target to actually become foreground before typing -
             // usually one or two ticks - rather than a fixed worst-case delay.
             // Awaited (not slept) so the UI thread keeps pumping.
             var waited = 0;
-            while (waited < 250 && NativeMethods.GetForegroundWindow() != targetWindow)
+            while (waited < 250 && NativeMethods.GetForegroundWindow() != target.Window)
             {
-                await Task.Delay(15);
+                await Task.Delay(15, cancellationToken);
                 waited += 15;
             }
 
             // One extra tick for keyboard focus to settle inside the window
-            await Task.Delay(15);
+            await Task.Delay(15, cancellationToken);
+            trace?.Invoke("target-focus-wait-ended");
             Logger.Log($"Insert: target foreground after ~{waited}ms");
 
-            if (!NativeMethods.IsWindow(targetWindow))
+            if (!target.HasFocus() || !ModifiersReleased())
             {
-                return false; // target closed while we waited
+                return false; // recipient/focus changed, or a modifier is still held
             }
 
             // Simple emoji type reliably everywhere; joined graphemes (ZWJ
@@ -144,10 +189,24 @@ namespace EmojiPicker
 
             if (usePaste)
             {
-                return await PasteViaClipboardAsync(text);
+                return await PasteViaClipboardAsync(target, text, cancellationToken);
             }
 
-            return SendUnicodeKeystrokes(text);
+            cancellationToken.ThrowIfCancellationRequested();
+            var sent = target.HasFocus() && SendUnicodeKeystrokes(text);
+            // Keep the recipient foreground while its input queue consumes the
+            // injected UTF-16 events, before the picker reclaims keyboard focus.
+            if (sent) { await Task.Delay(30); }
+            return sent;
+        }
+
+        private static bool ModifiersReleased()
+        {
+            foreach (var key in new[] { 0x10, 0x11, 0x12, 0x5B, 0x5C })
+            {
+                if ((NativeMethods.GetAsyncKeyState(key) & 0x8000) != 0) { return false; }
+            }
+            return true;
         }
 
         private static bool SendUnicodeKeystrokes(string text)
@@ -175,7 +234,7 @@ namespace EmojiPicker
         /// the transient paste neither destroys existing content nor pollutes the
         /// history stack.
         /// </summary>
-        private static async Task<bool> PasteViaClipboardAsync(string text)
+        private static async Task<bool> PasteViaClipboardAsync(Target target, string text, CancellationToken cancellationToken)
         {
             // Snapshot the ENTIRE clipboard (all formats) before overwriting, so a
             // copied image / file selection isn't destroyed by the paste. Grab the
@@ -183,46 +242,51 @@ namespace EmojiPicker
             var previous = CaptureClipboard();
             var previousText = TryGetText(previous);
 
+            // Never replace clipboard data if it could not be fully snapshotted.
+            if (previous == null || !target.HasFocus() || !ModifiersReleased() || cancellationToken.IsCancellationRequested)
+            {
+                return false;
+            }
+
             if (!SetClipboardTextExcluded(text))
             {
                 return false;
             }
 
             var sequenceAfterSet = NativeMethods.GetClipboardSequenceNumber();
-            SendCtrlV();
-
-            // Give the target time to read the clipboard before restoring. A single
-            // fixed delay races slow/remote (RDP/Citrix) targets - which then paste
-            // the restored old content instead of the emoji - so it is configurable.
-            var delay = Math.Clamp(Settings.Current.PasteRestoreDelayMs, 50, 5000);
-            await Task.Delay(delay);
-
-            // If the clipboard changed during the wait, the user copied something
-            // else - don't clobber their new content with the old snapshot.
-            var userCopied = NativeMethods.GetClipboardSequenceNumber() != sequenceAfterSet;
-
-            if (previous != null && !userCopied)
+            Action restore = () =>
             {
-                // Restore the full snapshot; if that fails (a stale handle-backed
-                // format can't be re-serialised), at least put the text back so we
-                // never lose more than the old text-only restore did.
-                if (!RestoreClipboard(previous) && previousText != null)
+                // Never overwrite a new user copy, including during app exit.
+                if (NativeMethods.GetClipboardSequenceNumber() == sequenceAfterSet
+                    && !RestoreClipboard(previous) && previousText != null)
                 {
                     SetClipboardTextExcluded(previousText);
                 }
+            };
+            pendingClipboardRestore = restore;
+            try
+            {
+                var sent = !cancellationToken.IsCancellationRequested && target.HasFocus()
+                    && ModifiersReleased() && SendCtrlV();
+                // Restoration must finish even after dismissal/cancellation.
+                // Slow/remote recipients can require a longer configurable delay.
+                var delay = Math.Clamp(Settings.Current.PasteRestoreDelayMs, 50, 5000);
+                await Task.Delay(delay);
+                Logger.Log($"Paste: input accepted={sent}, restore after {delay}ms");
+                return sent;
             }
-            // else: clipboard was empty/unreadable, or the user copied during the
-            // wait - leave what's there (the emoji, or the user's new copy).
-
-            Logger.Log($"Paste: inserted via clipboard (Ctrl+V), restore after {delay}ms" +
-                (userCopied ? " (skipped - user copied)" : string.Empty));
-            return true;
+            finally
+            {
+                if (ReferenceEquals(pendingClipboardRestore, restore))
+                {
+                    FinishPendingClipboardRestore();
+                }
+            }
         }
 
         /// <summary>
         /// Puts text on the clipboard tagged so Clipboard History (Win+V), Cloud
-        /// Clipboard, and clipboard monitors ignore it. Public so the insert-failure
-        /// fallback can leave the emoji for manual paste without polluting history.
+        /// Clipboard, and cooperating clipboard monitors ignore it.
         /// Returns false on failure.
         /// </summary>
         public static bool SetClipboardTextExcluded(string text)
@@ -245,7 +309,7 @@ namespace EmojiPicker
         /// <summary>
         /// Copies every native clipboard format into a detached DataObject while the
         /// clipboard is still intact, so it can be restored after the paste. Returns
-        /// null when the clipboard is empty or nothing could be read.
+        /// null if any format cannot be read; an empty clipboard has an empty snapshot.
         /// </summary>
         private static System.Windows.IDataObject? CaptureClipboard()
         {
@@ -254,11 +318,10 @@ namespace EmojiPicker
                 var current = System.Windows.Clipboard.GetDataObject();
                 if (current == null)
                 {
-                    return null;
+                    return new System.Windows.DataObject();
                 }
 
                 var snapshot = new System.Windows.DataObject();
-                var copied = false;
                 foreach (var format in current.GetFormats(autoConvert: false))
                 {
                     try
@@ -267,16 +330,16 @@ namespace EmojiPicker
                         if (data != null)
                         {
                             snapshot.SetData(format, data);
-                            copied = true;
                         }
+                        else { return null; }
                     }
                     catch (Exception)
                     {
-                        // Skip any format that can't be read/round-tripped
+                        return null; // don't destroy formats we could not snapshot
                     }
                 }
 
-                return copied ? snapshot : null;
+                return snapshot;
             }
             catch (Exception)
             {
@@ -364,7 +427,7 @@ namespace EmojiPicker
             return count > 1;
         }
 
-        private static void SendCtrlV()
+        private static bool SendCtrlV()
         {
             var inputs = new[]
             {
@@ -373,7 +436,7 @@ namespace EmojiPicker
                 VirtualKeyEvent(VkV, keyUp: true),
                 VirtualKeyEvent(VkControl, keyUp: true),
             };
-            NativeMethods.SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<NativeMethods.INPUT>());
+            return NativeMethods.SendInput((uint)inputs.Length, inputs, Marshal.SizeOf<NativeMethods.INPUT>()) == (uint)inputs.Length;
         }
 
         private const ushort VkControl = 0x11;
@@ -439,7 +502,7 @@ namespace EmojiPicker
             NativeMethods.GetWindowThreadProcessId(window, out var pid);
             if (pid == 0)
             {
-                return false;
+                return true;
             }
 
             var process = NativeMethods.OpenProcess(NativeMethods.ProcessQueryLimitedInformation, false, pid);
@@ -463,7 +526,7 @@ namespace EmojiPicker
                         return elevated != 0;
                     }
 
-                    return false;
+                    return true;
                 }
                 finally
                 {

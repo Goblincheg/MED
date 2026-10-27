@@ -21,6 +21,18 @@ namespace EmojiPicker
         internal static extern bool IsWindow(IntPtr hWnd);
 
         [DllImport("user32.dll")]
+        internal static extern bool IsChild(IntPtr parent, IntPtr child);
+
+        [DllImport("user32.dll")]
+        internal static extern IntPtr WindowFromPoint(POINT point);
+
+        [DllImport("user32.dll")]
+        internal static extern IntPtr GetAncestor(IntPtr window, uint flags);
+
+        [DllImport("user32.dll")]
+        internal static extern bool GetWindowRect(IntPtr window, out RECT rect);
+
+        [DllImport("user32.dll")]
         internal static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
         [DllImport("kernel32.dll")]

@@ -143,6 +143,11 @@ namespace EmojiPicker
 
         private void OnHotkeyPressed(IntPtr targetWindow)
         {
+            if (picker?.IsPickerOpen == true)
+            {
+                picker.DismissPicker("hotkey-toggle");
+                return;
+            }
             // Resolve the focused control and caret here (UI thread), off the hook
             // thread. The target app still has focus (our window isn't shown yet),
             // so this is the same state the hook would have captured - but a hung
@@ -161,7 +166,7 @@ namespace EmojiPicker
                 if (picker.IsVisible)
                 {
                     Logger.Log("Hotkey while open -> toggle dismiss");
-                    picker.DismissPicker();
+                    picker.DismissPicker("hotkey-picker");
                 }
 
                 return; // hidden-but-captured is a stale race; keep the old target
@@ -283,14 +288,29 @@ namespace EmojiPicker
 
         private void ShowPickerFromTray()
         {
+            if (picker?.IsPickerOpen == true) { return; }
             // Opened by mouse from the tray: there is no caret to anchor to, and
             // the target/caret left over from an earlier hotkey press would send
             // the emoji to a window the user isn't looking at any more. With no
-            // target, a pick falls back to the clipboard - predictable.
+            // target, a pick reports failure rather than guessing a recipient.
             PreviousForegroundWindow = IntPtr.Zero;
             PreviousFocusWindow = IntPtr.Zero;
             PreviousCaretRect = null;
             picker?.ShowPicker();
+        }
+
+        internal void ReportInsertionFailure()
+        {
+            trayIcon?.ShowBalloonTip(4000, "Classic Emoji Picker",
+                "Не удалось безопасно вставить эмодзи. Верни курсор в нужное поле и открой панель через Win + . ещё раз.",
+                ToolTipIcon.Warning);
+        }
+
+        internal void ReportInsertionQueueFull()
+        {
+            trayIcon?.ShowBalloonTip(4000, "Classic Emoji Picker",
+                "Очередь вставки заполнена. Новые выборы не приняты; дождись завершения и повтори их.",
+                ToolTipIcon.Warning);
         }
 
         private static Icon LoadTrayIcon()
@@ -375,6 +395,8 @@ namespace EmojiPicker
 
         protected override void OnExit(ExitEventArgs e)
         {
+            picker?.DismissPicker("application-exit");
+            TextInjector.FinishPendingClipboardRestore();
             hookRearmTimer?.Stop();
             try
             {

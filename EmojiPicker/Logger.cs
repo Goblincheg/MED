@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace EmojiPicker
@@ -24,6 +25,27 @@ namespace EmojiPicker
         private static readonly string EnabledMarker = Path.Combine(Dir, "debug.enabled");
 
         public static string LogPath { get; } = Path.Combine(Dir, "debug.log");
+        internal static string PickerLifecycleLogPath { get; } = Path.Combine(Dir, "picker-lifecycle.log");
+
+        internal static void WritePickerLifecycle(IReadOnlyList<string> events)
+        {
+            try
+            {
+                lock (Gate)
+                {
+                    Directory.CreateDirectory(Dir);
+                    if (File.Exists(PickerLifecycleLogPath) && new FileInfo(PickerLifecycleLogPath).Length > MaxLogBytes)
+                    {
+                        File.Move(PickerLifecycleLogPath, Path.Combine(Dir, "picker-lifecycle.old.log"), overwrite: true);
+                    }
+                    File.AppendAllLines(PickerLifecycleLogPath, events);
+                }
+            }
+            catch (Exception)
+            {
+                // Diagnostic output must not affect input or window lifetime.
+            }
+        }
 
         public static bool Enabled { get; private set; }
 

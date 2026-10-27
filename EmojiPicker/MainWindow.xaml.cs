@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -68,10 +70,40 @@ namespace EmojiPicker
         private string currentCategory = DefaultCategoryKey;
         private bool isShowing;
         private bool recentsDirty;
+        private CancellationTokenSource? insertionSession;
+        private TextInjector.Target insertionTarget;
+        private PickerDismissMonitor? dismissMonitor;
+        private readonly InsertionQueue insertionQueue = new();
+        private bool insertionRunning;
+        private bool restoringPickerFocus;
+        private bool queueFullReported;
+        internal PickerLifecycleTrace LifecycleTrace { get; } = new();
+        internal bool IsPickerOpen => insertionSession != null && !insertionSession.IsCancellationRequested && IsVisible;
 
         public MainWindow()
         {
             InitializeComponent();
+            SourceInitialized += (_, _) =>
+                HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(PickerWindowProc);
+            PreviewGotKeyboardFocus += (_, e) =>
+            {
+                TraceLifecycle("wpf-preview-keyboard-focus");
+                if (insertionRunning && !restoringPickerFocus) { e.Handled = true; }
+            };
+            LostFocus += (_, _) => TraceLifecycle("wpf-lost-focus");
+            LostKeyboardFocus += (_, _) => TraceLifecycle("wpf-lost-keyboard-focus");
+            Activated += (_, _) => TraceLifecycle("wpf-activated");
+            IsVisibleChanged += (_, _) =>
+            {
+                TraceLifecycle(IsVisible ? "visibility-shown" : "visibility-hidden");
+                if (!IsVisible) { LifecycleTrace.Finish(); }
+            };
+            Closing += (_, _) => TraceLifecycle("window-closing");
+            Closed += (_, _) =>
+            {
+                TraceLifecycle("window-closed");
+                LifecycleTrace.Finish();
+            };
             InitializeEmojis();
             LoadRecentEmojis();
 
@@ -152,6 +184,7 @@ namespace EmojiPicker
                     // us on-screen - don't yank it back closed.
                     if (Left <= -30000)
                     {
+                        TraceLifecycle("hide-prewarm-offscreen");
                         Hide();
                     }
 
@@ -171,6 +204,16 @@ namespace EmojiPicker
         /// </summary>
         public void ShowPicker()
         {
+            if (IsPickerOpen)
+            {
+                TraceLifecycle("show-ignored-already-open");
+                return;
+            }
+            LifecycleTrace.Start();
+            TraceLifecycle("show-begin diagnostic=MED-4.3-v1");
+            insertionSession?.Dispose();
+            insertionSession = new CancellationTokenSource();
+            insertionTarget = TextInjector.Target.Capture(App.PreviousForegroundWindow, App.PreviousFocusWindow);
             // Ignore focus-loss triggered while we are bringing the window up
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             isShowing = true;
@@ -198,7 +241,23 @@ namespace EmojiPicker
             var handle = new WindowInteropHelper(this).Handle;
             if (handle != IntPtr.Zero)
             {
+                dismissMonitor?.Dispose();
+                try
+                {
+                    dismissMonitor = new PickerDismissMonitor(handle, RequestDismiss,
+                        () => Dispatcher.BeginInvoke(new Action(CommitSelectedEmoji)), () => insertionRunning, TraceLifecycle);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogAlways($"Picker input monitor failed: {ex}");
+                    DismissPicker("input-monitor-failure");
+                    isShowing = false;
+                    ((App)Application.Current).ReportInsertionFailure();
+                    return;
+                }
+                TraceLifecycle("show-focus-request");
                 ForceForeground(handle);
+                TraceLifecycle("show-focus-return");
             }
 
             SearchBox.Focus();
@@ -208,7 +267,11 @@ namespace EmojiPicker
                 $"W={Width} H={Height} foreground={NativeMethods.GetForegroundWindow()} thisHwnd={handle}");
 
             // Clear the guard once the show/activation storm has settled
-            Dispatcher.BeginInvoke(new Action(() => isShowing = false), System.Windows.Threading.DispatcherPriority.Background);
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                isShowing = false;
+                TraceLifecycle("show-guard-cleared");
+            }), System.Windows.Threading.DispatcherPriority.Background);
         }
 
         /// <summary>
@@ -342,6 +405,9 @@ namespace EmojiPicker
 
         private void MainWindow_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            // DragMove can activate the picker as well; choices during a transfer
+            // must leave the recipient in control of keyboard focus.
+            if (insertionRunning) { return; }
             // Allow dragging the window when clicking anywhere on it
             if (e.ButtonState == MouseButtonState.Pressed)
             {
@@ -605,6 +671,7 @@ namespace EmojiPicker
 
         private void CommitSelectedEmoji()
         {
+            if (searchTimer.IsEnabled) { RunSearch(); }
             if (EmojiGrid.SelectedItem is Emoji emoji)
             {
                 CommitEmoji(emoji);
@@ -637,47 +704,155 @@ namespace EmojiPicker
 
         private void CommitEmoji(Emoji emoji)
         {
-            Logger.Log($"CommitEmoji: '{emoji.Character}' -> target={App.PreviousForegroundWindow}");
-            AddToRecentEmojis(emoji);
-            DismissPicker();
-
-            // Defer the insertion until the current input event has finished
-            // processing: injecting keystrokes from inside a key/mouse handler
-            // corrupts the injected Unicode sequence
-            Dispatcher.BeginInvoke(new Action(async () =>
+            if (!IsPickerOpen || insertionSession == null) { return; }
+            if (!insertionQueue.TryEnqueue(new InsertionQueue.Request(emoji, insertionTarget, insertionSession.Token)))
             {
-                // Insert into the app that was focused before the picker opened,
-                // like the Windows 10 panel; fall back to the clipboard otherwise.
-                // Awaited so the focus-settle delay doesn't block the UI thread.
-                bool inserted;
-                try
+                if (!queueFullReported)
                 {
-                    inserted = await TextInjector.TryInsertAsync(
-                        App.PreviousForegroundWindow, App.PreviousFocusWindow, emoji.Character);
+                    queueFullReported = true;
+                    ((App)Application.Current).ReportInsertionQueueFull();
                 }
-                catch (Exception ex)
-                {
-                    Logger.LogAlways($"Insert threw: {ex}");
-                    inserted = false;
-                }
-
-                if (!inserted)
-                {
-                    // Leave the emoji on the clipboard for manual paste - tagged to
-                    // stay out of Clipboard History, like the paste path
-                    Logger.Log("Insert failed; leaving the emoji on the clipboard");
-                    TextInjector.SetClipboardTextExcluded(emoji.Character);
-                }
-            }), System.Windows.Threading.DispatcherPriority.Background);
+                return;
+            }
+            TraceLifecycle("choice-enqueued");
+            if (!insertionRunning)
+            {
+                insertionRunning = true;
+                // Finish the current mouse/key handler before injecting input.
+                Dispatcher.BeginInvoke(new Action(async () => await ProcessInsertionsAsync()), DispatcherPriority.Background);
+            }
         }
 
+        private async Task ProcessInsertionsAsync()
+        {
+            if (insertionQueue.IsDraining) { return; }
+            TraceLifecycle("drain-begin");
+            try
+            {
+                await insertionQueue.DrainAsync(async request =>
+                {
+                    var originSession = LifecycleTrace.Session;
+                    TraceLifecycle($"insert-begin requestTarget={request.Target.Window}");
+                    var inserted = false;
+                    try
+                    {
+                        var handle = new WindowInteropHelper(this).Handle;
+                        var foreground = NativeMethods.GetForegroundWindow();
+                        var state = ForegroundPolicy.Classify(foreground, handle, request.Target.Window);
+                        TraceLifecycle($"insert-preflight state={state} observedForeground={foreground}");
+                        // A queued choice cannot take input away from an unrelated app.
+                        // Unknown permits only a focus-restoration attempt; the
+                        // injector still requires a confirmed recipient before input.
+                        if (ForegroundPolicy.MayRestoreTarget(state))
+                        {
+                            inserted = await TextInjector.TryInsertAsync(request.Target, request.Emoji.Character, request.Token,
+                                metadata => TraceLifecycle($"insert-origin={originSession} requestTarget={request.Target.Window} {metadata}"));
+                        }
+                        else { TraceLifecycle("insert-preflight-foreign-foreground"); }
+                    }
+                    catch (OperationCanceledException) { }
+                    catch (Exception ex) { Logger.LogAlways($"Insert threw: {ex}"); }
+
+                    if (inserted) { AddToRecentEmojis(request.Emoji); }
+                    TraceLifecycle($"insert-end accepted={inserted} requestCancelled={request.Token.IsCancellationRequested}");
+                    if (request.Token.IsCancellationRequested || !IsPickerOpen) { return; }
+
+                    var pickerHandle = new WindowInteropHelper(this).Handle;
+                    var active = NativeMethods.GetForegroundWindow();
+                    var postState = ForegroundPolicy.Classify(active, pickerHandle, request.Target.Window);
+                    TraceLifecycle($"insert-postcheck state={postState} observedForeground={active}");
+                    if (ForegroundPolicy.ShouldCloseAfterInsert(postState))
+                    {
+                        DismissPicker("insert-postcheck-foreign-foreground");
+                        return;
+                    }
+                    restoringPickerFocus = true;
+                    try
+                    {
+                        TraceLifecycle("programmatic-picker-focus-begin");
+                        ForceForeground(pickerHandle);
+                        SearchBox.Focus();
+                        Keyboard.Focus(SearchBox);
+                        TraceLifecycle("programmatic-picker-focus-end");
+                    }
+                    finally { restoringPickerFocus = false; }
+                    if (!inserted)
+                    {
+                        insertionQueue.Clear();
+                        ((App)Application.Current).ReportInsertionFailure();
+                    }
+                });
+            }
+            finally
+            {
+                insertionRunning = false;
+                queueFullReported = false;
+                TraceLifecycle("drain-finally");
+                var finalForeground = NativeMethods.GetForegroundWindow();
+                var finalState = ForegroundPolicy.Classify(finalForeground,
+                    new WindowInteropHelper(this).Handle, insertionTarget.Window);
+                TraceLifecycle($"drain-finally-check state={finalState} observedForeground={finalForeground}");
+                if (IsPickerOpen && ForegroundPolicy.ShouldCloseAfterInsert(finalState))
+                {
+                    DismissPicker("drain-finally-not-foreground");
+                }
+                if (!IsVisible && recentsDirty)
+                {
+                    SaveRecentEmojis();
+                    recentsDirty = false;
+                }
+            }
+        }
+
+        private void RequestDismiss(string reason)
+        {
+            // Hook callbacks do only cancellation and dispatch, never file I/O or UI.
+            TraceLifecycle($"dismiss-request reason={reason}");
+            var originSession = LifecycleTrace.Session;
+            insertionSession?.Cancel();
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                TraceLifecycle($"dismiss-dispatch origin={originSession}");
+                DismissPicker(reason);
+            }), DispatcherPriority.Send);
+        }
+
+        private void TraceLifecycle(string eventCode)
+        {
+            if (!LifecycleTrace.Active) { return; }
+            LifecycleTrace.Record($"{eventCode} pid={Environment.ProcessId} " +
+                $"picker={new WindowInteropHelper(this).Handle} target={insertionTarget.Window} " +
+                $"foreground={NativeMethods.GetForegroundWindow()} visible={IsVisible} active={IsActive} " +
+                $"showing={isShowing} running={insertionRunning} draining={insertionQueue.IsDraining} " +
+                $"restoring={restoringPickerFocus} pending={insertionQueue.Count} " +
+                $"cancelled={insertionSession?.IsCancellationRequested}");
+        }
+
+        private IntPtr PickerWindowProc(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+        {
+            const int WmMouseActivate = 0x0021;
+            const int MaNoActivate = 3; // deliver the click, but don't steal target focus
+            if (message == WmMouseActivate && insertionRunning && !restoringPickerFocus)
+            {
+                TraceLifecycle("wm-mouseactivate-noactivate");
+                handled = true;
+                return new IntPtr(MaNoActivate);
+            }
+            if (message == WmMouseActivate) { TraceLifecycle("wm-mouseactivate-normal"); }
+            return IntPtr.Zero;
+        }
         /// <summary>
         /// Hides the resident picker (it is reused on the next hotkey press)
         /// and persists the recents list. Public so the hotkey can toggle the
         /// picker closed when pressed while it is already open.
         /// </summary>
-        public void DismissPicker()
+        public void DismissPicker(string reason = "explicit-dismiss")
         {
+            TraceLifecycle($"dismiss reason={reason}");
+            insertionSession?.Cancel();
+            insertionQueue.Clear();
+            dismissMonitor?.Dispose();
+            dismissMonitor = null;
             searchTimer.Stop(); // no point filtering a hidden grid
             if (recentsDirty)
             {
@@ -685,6 +860,7 @@ namespace EmojiPicker
                 recentsDirty = false;
             }
 
+            TraceLifecycle($"hide-request reason={reason}");
             Hide();
 
             // Give the memory back while we idle in the tray; ContextIdle runs
@@ -694,6 +870,7 @@ namespace EmojiPicker
 
         private void MainWindow_Deactivated(object sender, EventArgs e)
         {
+            TraceLifecycle("wpf-deactivated");
             // Ignore the transient deactivation that can occur while we are still
             // bringing the window to the foreground, or it would hide immediately
             if (isShowing)
@@ -702,9 +879,34 @@ namespace EmojiPicker
                 return;
             }
 
-            // Dismiss when focus leaves the panel, like the Windows 10 picker
-            Logger.Log("Deactivated -> dismiss");
-            DismissPicker();
+            if (insertionRunning && IsPickerOpen)
+            {
+                // WM_ACTIVATE can arrive before the foreground transition has
+                // finished. Check after the activation messages, not inside them.
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    TraceLifecycle("deactivated-deferred-check");
+                    var foreground = NativeMethods.GetForegroundWindow();
+                    var state = ForegroundPolicy.Classify(foreground,
+                        new WindowInteropHelper(this).Handle, insertionTarget.Window);
+                    TraceLifecycle($"deactivated-deferred-state state={state} observedForeground={foreground}");
+                    if (IsPickerOpen && ForegroundPolicy.ShouldCloseAfterInsert(state))
+                    {
+                        DismissPicker("deactivated-deferred-foreign-foreground");
+                    }
+                }), DispatcherPriority.Input);
+                return;
+            }
+
+            var idleForeground = NativeMethods.GetForegroundWindow();
+            var idleState = ForegroundPolicy.Classify(idleForeground,
+                new WindowInteropHelper(this).Handle, insertionTarget.Window);
+            TraceLifecycle($"deactivated-idle-state state={idleState} observedForeground={idleForeground}");
+            if (ForegroundPolicy.ShouldCloseWhenIdle(idleState))
+            {
+                Logger.Log("Deactivated -> dismiss");
+                DismissPicker("deactivated-idle");
+            }
         }
 
         private void AddToRecentEmojis(Emoji emoji)
@@ -782,23 +984,14 @@ namespace EmojiPicker
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            DismissPicker();
+            DismissPicker("close-button");
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (e.Key == Key.Escape)
             {
-                // First Esc clears an active search (back to the category);
-                // Esc with nothing to clear closes the picker
-                if (SearchBox.Text.Trim().Length > 0)
-                {
-                    SearchBox.Clear(); // TextChanged restores the category
-                }
-                else
-                {
-                    DismissPicker();
-                }
+                DismissPicker("escape-wpf");
 
                 e.Handled = true;
             }
