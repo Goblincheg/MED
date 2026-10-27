@@ -22,7 +22,7 @@ This version includes core functionality and is ready for daily use:
 - ✅ **Opens where you're typing** - anchors to the text caret (mouse pointer fallback), like the Windows 10 panel
 - ✅ **Direct insertion** - the selected emoji is typed into the app you were using
 - ✅ **Dark mode** - automatically follows the Windows light/dark setting
-- ✅ **Search by name or keyword** (e.g. "splash" finds 💦), focused and ready as soon as the picker opens
+- ✅ **English and Russian search** (e.g. "splash" finds 💦, "уточка" finds 🦆), focused and ready as soon as the picker opens
 - ✅ **Keyboard driven** - arrow keys move the selection, Tab/Shift+Tab switch category, Enter inserts, ESC closes
 - ✅ **Installer** with optional start-with-Windows
 
@@ -32,10 +32,10 @@ This version includes core functionality and is ready for daily use:
 - **Win+. Takeover** - Runs quietly in the system tray and opens on Win+. in place of the Windows 11 panel
 - **The Original Seven Categories** - Recent, Smiley faces & animals, People, Celebrations & objects, Food & plants, Transportation & places, Symbols
 - **Full Emoji Set** - Every renderable Unicode emoji from the database bundled with Emoji.Wpf (flags excluded, as in the Windows 10 picker)
-- **Direct Insertion** - Picking an emoji types it into the previously focused window; falls back to copying to the clipboard when no target exists
+- **Direct Insertion** - Picking an emoji types it into the previously focused window; reports failure when the original target cannot be validated
 - **Dark Mode** - Follows the system theme automatically and switches live when you change it
 - **Recent Emojis** - Recently used emojis are remembered between sessions
-- **Real-time Search** - Just start typing to filter emojis by name or keyword (e.g. "splash" finds 💦)
+- **Real-time Search** - Search English names/tags and Russian CLDR names/keywords with local synonyms; case and е/ё are ignored
 - **Keyboard Navigation** - Arrow keys move the highlighted emoji, Tab/Shift+Tab switch category, Enter inserts, ESC closes
 - **Lightweight** - No unnecessary features, GIFs, or bloat; idles in the tray at ~20 MB
 - **True Colour Emoji** - Rendered with [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) using the system Segoe UI Emoji font
@@ -115,9 +115,9 @@ Classic Emoji Picker then lives in the system tray. Press **Win+.** anywhere to 
 2. **Type** to search - the search box is focused from the start
 3. **Browse** categories with **Tab / Shift+Tab** (or click the tabs at the bottom); move the highlight with the arrow keys
 4. **Press Enter** (or click an emoji) to insert it into the app you were using
-5. If there is no target window, the emoji is copied to the clipboard instead
+5. Keep selecting emojis: the panel remains open and inserts into the original target. If that target cannot be validated, a tray warning reports the failure.
 
-The picker hides after inserting an emoji (or when it loses focus, or on ESC) and waits in the tray for the next Win+.. Recently used emojis are saved to `%APPDATA%\ClassicEmojiPicker\recent.json` and shown in the Recent tab 🕒.
+The picker stays open after insertion, preserving the current search and selection. Click outside, press ESC, or press Win+. again to close it. Recently used emojis are saved to `%APPDATA%\ClassicEmojiPicker\recent.json` and shown in the Recent tab 🕒. Data provenance, automated checks and the Windows 10 manual checklist are in [docs/RUSSIAN-SEARCH.md](docs/RUSSIAN-SEARCH.md).
 
 ## Settings
 
@@ -152,7 +152,7 @@ The app installs a low-level keyboard hook that catches Win+. before the Windows
 
 ### Known limitations
 
-- **Elevated (run-as-administrator) apps**: Windows does not deliver keystrokes destined for elevated windows to a non-elevated hook, so pressing Win+. inside an elevated app opens the **built-in** Windows panel instead of this picker. Similarly, emoji can't be typed into an elevated window from here - picking one for an elevated target copies it to the clipboard instead. (Fixing this would require running the picker elevated or shipping a signed UIAccess binary - both worse trades than the limitation.)
+- **Elevated (run-as-administrator) apps**: input delivery and hooks are subject to Windows security boundaries. Insertion into an elevated target from a non-elevated picker is refused with a tray warning; it does not replace clipboard contents as a fallback.
 - **Caret anchoring** relies on the target app exposing a system caret; apps that don't (some frameworks) fall back to opening at the mouse pointer.
 
 ## Emoji Rendering
