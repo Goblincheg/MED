@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyName>FluentEmojiComparison</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Reuse MED's existing version; no new package or library is introduced. -->
+    <PackageReference Include="Emoji.Wpf" Version="0.3.4" />
+    <Resource Include="Assets\**\*.png" />
+    <Resource Include="Assets\samples.json" Condition="Exists('Assets\samples.json')" />
+    <Content Include="licenses\*.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="README.md" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

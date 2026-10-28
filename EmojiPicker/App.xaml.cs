@@ -1,6 +1,9 @@
 using System;
 using System.Drawing;
 using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
@@ -14,8 +17,26 @@ namespace EmojiPicker
     {
         private const string MutexName = "ClassicEmojiPicker.SingleInstance";
         private const string ShowEventName = "ClassicEmojiPicker.Show";
-        private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        private const string RunValueName = "ClassicEmojiPicker";
+        // Retain the old mutex identity to avoid two competing Win+. hooks.
+        private const string SettingsEventName = "MED.Settings";
+        private const string ReadyEventName = "MED.Ready";
+        internal static string ExitEventName(string path) => "MED.Exit." + Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(path).ToUpperInvariant())))[..24];
+        internal static bool IsBackgroundLaunch(string[] args) => args.Contains("--background", StringComparer.OrdinalIgnoreCase);
+        private readonly StartupRegistration startup = new(new RegistryStartupStore(), Environment.ProcessPath!);
+        private EventWaitHandle? exitEvent;
+        private EventWaitHandle? settingsEvent;
+        private EventWaitHandle? readyEvent;
+        private SettingsWindow? settingsWindow;
+        private System.Windows.Threading.DispatcherTimer? notificationTimer;
+        // Internal test seam: isolated data/IPC and no global hooks. Never set by the app entry point.
+        internal string? ReleaseCheckRoot { get; set; }
+        internal StartupRegistration? ReleaseCheckStartup { get; set; }
+        private string instanceMutexName = MutexName;
+        private string instanceShowEventName = ShowEventName;
+        private string instanceSettingsEventName = SettingsEventName;
+        private string instanceReadyEventName = ReadyEventName;
+        private string instanceExitEventName = string.Empty;
 
         /// <summary>
         /// The foreground window when the hotkey fired; selected emoji are inserted
@@ -36,11 +57,6 @@ namespace EmojiPicker
         /// </summary>
         public static System.Drawing.Rectangle? PreviousCaretRect { get; set; }
 
-        // Run-again signals arriving this soon after startup are ignored: when
-        // both the HKLM (all-users installer) and HKCU (tray toggle) Run values
-        // exist, the second logon start would otherwise pop the picker open
-        private static readonly TimeSpan StartupShowGrace = TimeSpan.FromSeconds(3);
-
         private Mutex? instanceMutex;
         private EventWaitHandle? showEvent;
         private MainWindow? picker;
@@ -49,32 +65,65 @@ namespace EmojiPicker
         private Thread? showThread;
         private System.Windows.Threading.DispatcherTimer? hookRearmTimer;
         private volatile bool shuttingDown;
-        private DateTime showGraceAnchorUtc;
-        private bool graceActive;
 
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
 
-            // Only one resident instance may own the global hook and tray icon
-            instanceMutex = new Mutex(true, MutexName, out var isNew);
-            if (!isNew)
+            var executable = Environment.ProcessPath!;
+            var suffix = ReleaseCheckRoot == null ? "" : ".Check." + ExitEventName(ReleaseCheckRoot);
+            instanceMutexName = MutexName + suffix;
+            instanceShowEventName = ShowEventName + suffix;
+            instanceSettingsEventName = SettingsEventName + suffix;
+            instanceReadyEventName = ReadyEventName + suffix;
+            instanceExitEventName = ExitEventName(executable) + suffix;
+            if (e.Args.Contains("--shutdown", StringComparer.OrdinalIgnoreCase))
             {
-                // Already running: ask that instance to open the picker (so running
-                // the shortcut again behaves like a launcher), then exit
+                var result = 0;
                 try
                 {
-                    EventWaitHandle.OpenExisting(ShowEventName).Set();
+                    using var signal = EventWaitHandle.OpenExisting(instanceExitEventName);
+                    signal.Set();
+                    using var gate = Mutex.OpenExisting(instanceMutexName);
+                    var acquired = false;
+                    try { acquired = gate.WaitOne(TimeSpan.FromSeconds(10)); }
+                    catch (AbandonedMutexException) { acquired = true; }
+                    if (acquired) { gate.ReleaseMutex(); } else { result = 1; }
                 }
-                catch (Exception)
+                catch (WaitHandleCannotBeOpenedException) { }
+                Shutdown(result);
+                return;
+            }
+            instanceMutex = new Mutex(true, instanceMutexName, out var isNew);
+            if (!isNew)
+            {
+                if (!IsBackgroundLaunch(e.Args))
                 {
-                    // The primary may be mid-startup or shutting down; nothing to do
+                    try
+                    {
+                        using var ready = EventWaitHandle.OpenExisting(instanceReadyEventName);
+                        using var signal = EventWaitHandle.OpenExisting(e.Args.Contains("--settings") ? instanceSettingsEventName : instanceShowEventName);
+                        signal.Set();
+                    }
+                    catch (WaitHandleCannotBeOpenedException)
+                    {
+                        MessageBox.Show("Уже запущена предыдущая копия Classic Emoji Picker или MED запускается. Закрой старую копию через её меню и повтори запуск.", "MED");
+                    }
                 }
-
                 Shutdown();
                 return;
             }
-
+            try
+            {
+                AppDataPaths.Initialize(ReleaseCheckRoot == null ? AppContext.BaseDirectory : Path.Combine(ReleaseCheckRoot, "App"),
+                    ReleaseCheckRoot == null ? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) : Path.Combine(ReleaseCheckRoot, "Roaming"));
+            }
+            catch (Exception error)
+            {
+                MessageBox.Show("MED не запущен: " + error.Message, "MED", MessageBoxButton.OK, MessageBoxImage.Error);
+                Shutdown(1);
+                return;
+            }
             Logger.Initialize();
             var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
             Logger.Log($"=== Startup v{version} ===");
@@ -84,13 +133,11 @@ namespace EmojiPicker
             // relaunch during startup can signal it instead of failing to open a
             // not-yet-created event. The auto-reset event latches the signal until
             // the show-event loop starts (after the picker exists).
-            showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName);
+            showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, instanceShowEventName);
 
-            // The 3s show-grace only needs to suppress the one duplicate logon start
-            // that happens when both the all-users (HKLM) and per-user (HKCU)
-            // autostart entries exist. Without that duplicate, a run-again signal is
-            // always a genuine user relaunch and should open the picker immediately.
-            graceActive = IsStartupEnabled() && IsMachineStartupEnabled();
+            settingsEvent = new EventWaitHandle(false, EventResetMode.AutoReset, instanceSettingsEventName);
+            exitEvent = new EventWaitHandle(false, EventResetMode.AutoReset, instanceExitEventName);
+            readyEvent = new EventWaitHandle(true, EventResetMode.ManualReset, instanceReadyEventName);
 
             // A resident utility should survive a bad frame: log the exception
             // and keep running rather than take Win+. down until relaunch
@@ -98,8 +145,7 @@ namespace EmojiPicker
             {
                 Logger.LogAlways($"UNHANDLED (UI, continuing): {args.Exception}");
                 args.Handled = true;
-                trayIcon?.ShowBalloonTip(4000, "Classic Emoji Picker",
-                    $"Something went wrong; details in {Logger.LogPath}", ToolTipIcon.Warning);
+                Notify($"Произошла ошибка. Подробности: {Logger.LogPath}", ToolTipIcon.Warning);
             };
             AppDomain.CurrentDomain.UnhandledException += (_, args) =>
                 Logger.LogAlways($"FATAL: {args.ExceptionObject}");
@@ -113,10 +159,13 @@ namespace EmojiPicker
             picker = new MainWindow();
             picker.PreWarm(); // warm the render path so the first hotkey open is fast
 
-            hotkey = new HotkeyListener();
-            hotkey.HotkeyPressed += OnHotkeyPressed;
-            hotkey.Start();
-            Logger.Log("Keyboard hook installed");
+            if (ReleaseCheckRoot == null)
+            {
+                hotkey = new HotkeyListener();
+                hotkey.HotkeyPressed += OnHotkeyPressed;
+                hotkey.Start();
+                Logger.Log("Keyboard hook installed");
+            }
 
             // Windows can silently drop a low-level hook (callback timeout, secure
             // desktop, session switch). Re-arm on session change and on a periodic
@@ -131,14 +180,15 @@ namespace EmojiPicker
 
             // Now that the picker exists, start handling run-again signals (a signal
             // latched during startup is processed here). The event was created above.
-            // Anchor the show-grace HERE, not at process start: a duplicate-logon
-            // signal latched during a slow warm-up must still fall inside the grace
-            // window when the loop finally consumes it, or the picker would pop open.
-            showGraceAnchorUtc = DateTime.UtcNow;
             showThread = new Thread(ShowEventLoop) { IsBackground = true };
             showThread.Start();
 
             CreateTrayIcon();
+            if (e.Args.Contains("--settings", StringComparer.OrdinalIgnoreCase)) { ShowSettings(); }
+            if (AppDataPaths.Warning != null || Settings.LoadWarning != null || picker.DataWarning != null)
+            {
+                MessageBox.Show(string.Join("\n\n", new[] { AppDataPaths.Warning, Settings.LoadWarning, picker.DataWarning }.Where(text => text != null)), "MED — данные", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         private void OnHotkeyPressed(IntPtr targetWindow)
@@ -191,13 +241,16 @@ namespace EmojiPicker
 
         private void ShowEventLoop()
         {
-            while (showEvent != null && showEvent.WaitOne())
+            while (showEvent != null && exitEvent != null && settingsEvent != null)
             {
+                var command = WaitHandle.WaitAny([showEvent, exitEvent, settingsEvent]);
                 if (shuttingDown)
                 {
                     return;
                 }
 
+                if (command == 1) { Dispatcher.BeginInvoke(new Action(() => Shutdown())); continue; }
+                if (command == 2) { Dispatcher.BeginInvoke(new Action(ShowSettings)); continue; }
                 // Snapshot the foreground state on this thread, at signal time
                 var target = NativeMethods.GetForegroundWindow();
                 var focus = TextInjector.GetFocusedControl(target);
@@ -206,16 +259,6 @@ namespace EmojiPicker
 
                 Dispatcher.BeginInvoke(new Action(() =>
                 {
-                    // Ignore signals right after startup ONLY when a duplicate logon
-                    // start is actually possible (both the HKLM all-users and HKCU
-                    // per-user Run values present); that duplicate would otherwise
-                    // pop the picker. Otherwise a run-again is a real user relaunch.
-                    if (graceActive && DateTime.UtcNow - showGraceAnchorUtc < StartupShowGrace)
-                    {
-                        Logger.Log("Show requested (run-again) ignored during startup grace");
-                        return;
-                    }
-
                     Logger.Log("Show requested (run-again)");
 
                     // Don't let the picker become its own insertion target when
@@ -235,56 +278,57 @@ namespace EmojiPicker
         private void CreateTrayIcon()
         {
             var menu = new ContextMenuStrip();
-            menu.Items.Add("Open Emoji Picker", null, (_, _) => ShowPickerFromTray());
+            menu.Items.Add("Открыть MED", null, (_, _) => ShowPickerFromTray());
+            menu.Items.Add("Настройки MED", null, (_, _) => ShowSettings());
             menu.Items.Add(new ToolStripSeparator());
-
-            var startupItem = new ToolStripMenuItem("Start with Windows")
-            {
-                Checked = IsStartupEnabled(),
-                CheckOnClick = true,
-            };
-            startupItem.CheckedChanged += (_, _) => SetStartupEnabled(startupItem.Checked);
-            if (IsMachineStartupEnabled())
-            {
-                // An all-users install manages autostart via HKLM, which this
-                // per-user toggle can't change - show it as on and read-only
-                startupItem.Checked = true;
-                startupItem.CheckOnClick = false;
-                startupItem.Enabled = false;
-                startupItem.ToolTipText = "Enabled for all users by the installer";
-            }
-
-            menu.Items.Add(startupItem);
-
-            var loggingItem = new ToolStripMenuItem("Debug logging")
-            {
-                Checked = Logger.Enabled,
-                ToolTipText = Logger.LogPath,
-            };
-            loggingItem.Click += (_, _) =>
-            {
-                var on = Logger.Toggle();
-                loggingItem.Checked = on;
-                trayIcon?.ShowBalloonTip(
-                    4000,
-                    "Classic Emoji Picker",
-                    on ? $"Debug logging ON\n{Logger.LogPath}" : "Debug logging OFF",
-                    ToolTipIcon.Info);
-            };
-            menu.Items.Add(loggingItem);
-
-            menu.Items.Add(new ToolStripSeparator());
-            menu.Items.Add("Exit", null, (_, _) => Shutdown());
-
+            menu.Items.Add("Выход из MED", null, (_, _) => Shutdown());
             trayIcon = new NotifyIcon
             {
                 Icon = LoadTrayIcon(),
-                Text = "Classic Emoji Picker",
-                Visible = true,
+                Text = "MED — Mikhalych Emoji Dock",
+                Visible = Settings.Current.ShowTrayIcon,
                 ContextMenuStrip = menu,
             };
             trayIcon.DoubleClick += (_, _) => ShowPickerFromTray();
+            trayIcon.BalloonTipClosed += (_, _) => Dispatcher.BeginInvoke(new Action(RestoreTrayVisibility));
         }
+
+        internal void ShowSettings()
+        {
+            picker?.DismissPicker("settings-open");
+            if (settingsWindow != null) { settingsWindow.Activate(); return; }
+            settingsWindow = new SettingsWindow(ReleaseCheckStartup ?? startup, _ => RestoreTrayVisibility(), () => Shutdown());
+            if (ReleaseCheckRoot != null)
+            {
+                settingsWindow.ShowActivated = false;
+                settingsWindow.ShowInTaskbar = false;
+                settingsWindow.WindowStartupLocation = WindowStartupLocation.Manual;
+                settingsWindow.Left = -20000; settingsWindow.Top = -20000;
+            }
+            settingsWindow.Closed += (_, _) => settingsWindow = null;
+            settingsWindow.Show();
+        }
+
+        private void RestoreTrayVisibility()
+        {
+            notificationTimer?.Stop();
+            if (trayIcon != null) { trayIcon.Visible = Settings.Current.ShowTrayIcon; }
+        }
+
+        private void Notify(string message, ToolTipIcon kind)
+        {
+            if (trayIcon == null) { return; }
+            // Shell balloons require a registered icon. It is temporary when the
+            // user disabled the persistent icon; this does not change the setting.
+            trayIcon.Visible = true;
+            trayIcon.ShowBalloonTip(4000, "MED", message, kind);
+            notificationTimer ??= new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(8) };
+            notificationTimer.Stop();
+            notificationTimer.Tick -= NotificationExpired;
+            notificationTimer.Tick += NotificationExpired;
+            notificationTimer.Start();
+        }
+        private void NotificationExpired(object? sender, EventArgs e) => RestoreTrayVisibility();
 
         private void ShowPickerFromTray()
         {
@@ -301,24 +345,22 @@ namespace EmojiPicker
 
         internal void ReportInsertionFailure()
         {
-            trayIcon?.ShowBalloonTip(4000, "Classic Emoji Picker",
-                "Не удалось безопасно вставить эмодзи. Верни курсор в нужное поле и открой панель через Win + . ещё раз.",
-                ToolTipIcon.Warning);
+            Notify("Не удалось безопасно вставить эмодзи. Верни курсор в нужное поле и открой панель через Win + . ещё раз.", ToolTipIcon.Warning);
         }
+
+        internal void ReportDataFailure() => Notify("Историю не удалось сохранить. Проверь права записи в каталог данных MED (путь указан в настройках).", ToolTipIcon.Warning);
 
         internal void ReportInsertionQueueFull()
         {
-            trayIcon?.ShowBalloonTip(4000, "Classic Emoji Picker",
-                "Очередь вставки заполнена. Новые выборы не приняты; дождись завершения и повтори их.",
-                ToolTipIcon.Warning);
+            Notify("Очередь вставки заполнена. Новые выборы не приняты; дождись завершения и повтори их.", ToolTipIcon.Warning);
         }
 
         private static Icon LoadTrayIcon()
         {
             try
             {
-                var uri = new Uri("pack://application:,,,/Resources/app.ico");
-                var stream = GetResourceStream(uri)?.Stream;
+                var uri = new Uri("pack://application:,,,/MED;component/Resources/app.ico");
+                using var stream = GetResourceStream(uri)?.Stream;
                 if (stream != null)
                 {
                     return new Icon(stream);
@@ -333,68 +375,10 @@ namespace EmojiPicker
             return (exePath != null ? Icon.ExtractAssociatedIcon(exePath) : null) ?? SystemIcons.Application;
         }
 
-        private static bool IsStartupEnabled()
-        {
-            try
-            {
-                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(RunKeyPath);
-                return key?.GetValue(RunValueName) != null;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// True when an all-users install registered autostart under HKLM
-        /// (read-only from this per-user process; the tray toggle can't change it).
-        /// </summary>
-        private static bool IsMachineStartupEnabled()
-        {
-            try
-            {
-                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(RunKeyPath);
-                return key?.GetValue(RunValueName) != null;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        private static void SetStartupEnabled(bool enabled)
-        {
-            try
-            {
-                using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
-                if (key == null)
-                {
-                    return;
-                }
-
-                if (enabled)
-                {
-                    var exePath = Environment.ProcessPath;
-                    if (exePath != null)
-                    {
-                        key.SetValue(RunValueName, $"\"{exePath}\"");
-                    }
-                }
-                else
-                {
-                    key.DeleteValue(RunValueName, throwOnMissingValue: false);
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Could not update the startup setting: {ex.Message}",
-                    "Classic Emoji Picker", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-
         protected override void OnExit(ExitEventArgs e)
         {
+            notificationTimer?.Stop();
+            settingsWindow?.Close();
             picker?.DismissPicker("application-exit");
             TextInjector.FinishPendingClipboardRestore();
             hookRearmTimer?.Stop();
@@ -416,6 +400,9 @@ namespace EmojiPicker
             showEvent?.Set();
             showThread?.Join(1000);
             showEvent?.Dispose();
+            exitEvent?.Dispose();
+            settingsEvent?.Dispose();
+            readyEvent?.Dispose();
 
             if (trayIcon != null)
             {

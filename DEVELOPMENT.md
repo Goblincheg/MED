@@ -152,10 +152,10 @@ git push origin v0.x.x
 - **Build Fails:** Check .NET SDK 10.0.401 installation
 - **Emoji Render as Monochrome/Boxes:** Ensure the system Segoe UI Emoji font is present (bundled with Windows 10 1809+)
 - **Formatting Errors:** Run `dotnet format` to auto-fix
-- **Picker doesn't appear on Win+.:** Enable debug logging (tray menu → **Debug logging**) and inspect `%APPDATA%\ClassicEmojiPicker\debug.log` - the `PositionNearCursor`/`ShowPicker done` lines record the anchor (caret vs mouse), computed coordinates, and DPI scale
+- **Picker doesn't appear on Win+.:** Enable debug logging (настройки MED → **Диагностический журнал**) and inspect `выбранном каталоге данных MED (настройки → Каталог данных)\debug.log` - the `PositionNearCursor`/`ShowPicker done` lines record the anchor (caret vs mouse), computed coordinates, and DPI scale
 
 #### **Debug Logging**
-Toggle the tray menu's **Debug logging** item to write a diagnostic log at `%APPDATA%\ClassicEmojiPicker\debug.log` (off by default; a balloon tip confirms the state). It records the hotkey, positioning, foreground, and insertion path; fatal exceptions are always written regardless of the toggle. See `Logger.cs`.
+Toggle the MED settings **Диагностический журнал** item to write a diagnostic log at `выбранном каталоге данных MED (настройки → Каталог данных)\debug.log` (off by default; a balloon tip confirms the state). It records the hotkey, positioning, foreground, and insertion path; fatal exceptions are always written regardless of the toggle. See `Logger.cs`.
 
 #### **Debug Configuration**
 ```xml

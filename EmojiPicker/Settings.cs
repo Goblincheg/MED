@@ -19,18 +19,14 @@ namespace EmojiPicker
     }
 
     /// <summary>
-    /// User settings persisted as JSON in %APPDATA%\ClassicEmojiPicker\settings.json,
+    /// User settings persisted as JSON in the selected MED data directory,
     /// alongside recent.json and the debug log. Missing or unreadable settings fall
     /// back to defaults; a default file is written on first run so it is easy to find
     /// and edit by hand.
     /// </summary>
     internal sealed class Settings
     {
-        private static readonly string Dir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "ClassicEmojiPicker");
-
-        private static readonly string FilePath = Path.Combine(Dir, "settings.json");
+        private static string FilePath => AppDataPaths.FilePath("settings.json");
 
         public static Settings Current { get; private set; } = new Settings();
 
@@ -53,6 +49,12 @@ namespace EmojiPicker
         [JsonPropertyName("pasteRestoreDelayMs")]
         public int PasteRestoreDelayMs { get; set; } = 250;
 
+        [JsonPropertyName("showTrayIcon")]
+        public bool ShowTrayIcon { get; set; } = false;
+
+        internal static string? LoadWarning { get; private set; }
+        private static bool writable = true;
+
         [JsonIgnore]
         public EmojiInsertMode InsertMode => EmojiInsertMode?.Trim().ToLowerInvariant() switch
         {
@@ -64,6 +66,9 @@ namespace EmojiPicker
         /// <summary>Reads the settings file (writing defaults if absent). Call once at startup.</summary>
         public static void Load()
         {
+            Current = new Settings();
+            LoadWarning = null;
+            writable = true;
             try
             {
                 if (File.Exists(FilePath))
@@ -73,31 +78,35 @@ namespace EmojiPicker
                     {
                         Current = loaded;
                     }
+                    else { throw new JsonException("Settings must be a JSON object"); }
                 }
                 else
                 {
-                    Save(); // create a default file users can discover and edit
+                    if (!Save()) { LoadWarning = $"Не удалось создать настройки в {FilePath}. Проверь права записи."; }
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 Current = new Settings(); // any problem -> safe defaults
+                writable = false;
+                LoadWarning = $"Не удалось прочитать настройки: {FilePath}. Исходный файл не будет перезаписан. {ex.Message}";
             }
 
             Logger.Log($"Settings: emojiInsertMode={Current.InsertMode}");
         }
 
-        private static void Save()
+        internal static bool Save()
         {
             try
             {
-                Directory.CreateDirectory(Dir);
-                File.WriteAllText(FilePath,
+                if (!writable) { return false; }
+                AppDataPaths.WriteAtomic(FilePath,
                     JsonSerializer.Serialize(Current, new JsonSerializerOptions { WriteIndented = true }));
+                return true;
             }
             catch (Exception)
             {
-                // Writing the default file is best-effort; never throw at startup
+                return false;
             }
         }
     }

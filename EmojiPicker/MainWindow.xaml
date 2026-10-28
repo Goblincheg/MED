@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:emoji="clr-namespace:Emoji.Wpf;assembly=Emoji.Wpf"
         xmlns:vwp="clr-namespace:WpfToolkit.Controls;assembly=VirtualizingWrapPanel"
-        Title="Classic Emoji Picker"
+        xmlns:local="clr-namespace:EmojiPicker"
+        Title="MED"
         Height="440"
         Width="400"
         WindowStyle="None"
@@ -36,7 +37,8 @@
                                 BorderBrush="Transparent"
                                 BorderThickness="0,0,0,2"
                                 Padding="0,8">
-                            <Image emoji:Image.Source="{Binding Icon}"
+                            <Image local:FluentEmojiImage.Source="{Binding Icon}"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
                                    Width="23" Height="23"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
@@ -72,7 +74,8 @@
                                 Margin="1"
                                 Background="Transparent"
                                 CornerRadius="2">
-                            <Image emoji:Image.Source="{Binding Character}"
+                            <Image local:FluentEmojiImage.Source="{Binding Character}"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
                                    Width="32" Height="32"
                                    HorizontalAlignment="Center"
                                    VerticalAlignment="Center"/>
@@ -143,7 +146,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Search Box with watermark -->
-                <Grid Grid.Row="0" Margin="10,10,28,5">
+                <Grid Grid.Row="0" Margin="10,10,54,5">
                     <TextBox x:Name="SearchBox"
                              Padding="8"
                              FontSize="12"
@@ -226,6 +229,11 @@
             </Grid>
         </Border>
 
+        <Button x:Name="SettingsButton" HorizontalAlignment="Right" VerticalAlignment="Top"
+                Margin="0,8,30,0" Width="20" Height="20" Content="⚙" FontSize="14"
+                FontFamily="Segoe UI Symbol" Foreground="{DynamicResource CloseForegroundBrush}"
+                Background="Transparent" BorderBrush="Transparent" ToolTip="Настройки MED"
+                AutomationProperties.Name="Настройки MED" Click="SettingsButton_Click" Cursor="Hand"/>
         <!-- Close Button (top-right corner) -->
         <Button HorizontalAlignment="Right"
                 VerticalAlignment="Top"

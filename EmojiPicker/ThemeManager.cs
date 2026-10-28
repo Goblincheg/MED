@@ -13,8 +13,8 @@ namespace EmojiPicker
         private const string PersonalizeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
         private const string AppsUseLightThemeValue = "AppsUseLightTheme";
 
-        private static readonly Uri LightThemeUri = new Uri("Theme/LightTheme.xaml", UriKind.Relative);
-        private static readonly Uri DarkThemeUri = new Uri("Theme/DarkTheme.xaml", UriKind.Relative);
+        private static readonly Uri LightThemeUri = new Uri("pack://application:,,,/MED;component/Theme/LightTheme.xaml");
+        private static readonly Uri DarkThemeUri = new Uri("pack://application:,,,/MED;component/Theme/DarkTheme.xaml");
 
         private static ResourceDictionary? currentTheme;
         private static bool isDark;

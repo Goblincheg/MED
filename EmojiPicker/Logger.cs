@@ -18,14 +18,12 @@ namespace EmojiPicker
 
         private static readonly object Gate = new object();
 
-        private static readonly string Dir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "ClassicEmojiPicker");
+        private static string Dir => AppDataPaths.DirectoryPath;
 
-        private static readonly string EnabledMarker = Path.Combine(Dir, "debug.enabled");
+        private static string EnabledMarker => Path.Combine(Dir, "debug.enabled");
 
-        public static string LogPath { get; } = Path.Combine(Dir, "debug.log");
-        internal static string PickerLifecycleLogPath { get; } = Path.Combine(Dir, "picker-lifecycle.log");
+        public static string LogPath => Path.Combine(Dir, "debug.log");
+        internal static string PickerLifecycleLogPath => Path.Combine(Dir, "picker-lifecycle.log");
 
         internal static void WritePickerLifecycle(IReadOnlyList<string> events)
         {

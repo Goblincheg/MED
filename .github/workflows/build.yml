@@ -2,9 +2,12 @@ name: Build
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ master, main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ master, main ]
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -27,9 +30,8 @@ jobs:
     - name: Format Check
       run: dotnet format --verify-no-changes
 
-    - name: Upload build output
-      uses: actions/upload-artifact@v7
-      with:
-        name: EmojiPicker-build
-        path: EmojiPicker/bin/Release/net10.0-windows/
-        if-no-files-found: error
+    - name: Build automated checks
+      run: dotnet build tests/EmojiPicker.Checks/EmojiPicker.Checks.csproj -c Release -r win-x64 --self-contained true
+
+    - name: Run automated checks
+      run: ./tests/EmojiPicker.Checks/bin/Release/net10.0-windows/win-x64/EmojiPicker.Checks.exe

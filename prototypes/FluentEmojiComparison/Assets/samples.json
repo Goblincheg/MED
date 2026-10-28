@@ -1,0 +1,482 @@
+[
+  {
+    "Key": "1f923",
+    "Glyph": "\uD83E\uDD23",
+    "Label": "Катается от смеха",
+    "SourcePath": "assets/Rolling on the floor laughing/3D/rolling_on_the_floor_laughing_3d.png",
+    "SourceSha256": "22EBFD950C4DF297E784BABE1E31BC1713144615F78CB0262C8DC2CE0DA90CA0",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 8711,
+        "Sha256": "80807BF8FCCCBD573F30CDB39E18653B1B24D86AA361E311EBC10A933BD91C5A"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 15400,
+        "Sha256": "38C4E7F2D817C80335FF0CCF049901990B9822E0A240457E4D0E3A108A25188C"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 23217,
+        "Sha256": "741B6455D9A80BAEDE566B2290D7D122E0F693D6BA01407397CF41AE239CE010"
+      }
+    ]
+  },
+  {
+    "Key": "1f602",
+    "Glyph": "\uD83D\uDE02",
+    "Label": "Слёзы радости",
+    "SourcePath": "assets/Face with tears of joy/3D/face_with_tears_of_joy_3d.png",
+    "SourceSha256": "8AF20FB0C64C44A8D8C8D047C1410C5E529A37C3158D496832B380198ED2E9C3",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 8578,
+        "Sha256": "664791BEF5FCFF3E8602AAA1E20E41B848431E66FFC8625060ABD28701F1B126"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 15022,
+        "Sha256": "F997C859C94FAF692AA39AE134B97E0B47B98B0B9A28B93307453D6F3F8EE9B5"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 23009,
+        "Sha256": "48F2B40AF884FD379F77574020D8C23AAB4237665FD8466D034F98CB856A8AC7"
+      }
+    ]
+  },
+  {
+    "Key": "1f600",
+    "Glyph": "\uD83D\uDE00",
+    "Label": "Улыбка",
+    "SourcePath": "assets/Grinning face/3D/grinning_face_3d.png",
+    "SourceSha256": "175D214DF45FE18F6F106A9A094B695689D98ABE6F343295FCBD690A7EE4F0AB",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 8581,
+        "Sha256": "A757218D8B812CD537FAE3A6AB1CD228EFE1D46F979F118BC89C506F56EE1CDF"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 14701,
+        "Sha256": "760A8A45C8A79C696BE8B54033CBB216D004BC413C9ABA68847D6035FBE59313"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 22079,
+        "Sha256": "0B4700D2BABD6435B9CED8E8AFF77BA73441E61FDB1548450B8D4DFEA61AFBC7"
+      }
+    ]
+  },
+  {
+    "Key": "1f970",
+    "Glyph": "\uD83E\uDD70",
+    "Label": "Улыбка с сердечками",
+    "SourcePath": "assets/Smiling face with hearts/3D/smiling_face_with_hearts_3d.png",
+    "SourceSha256": "2B8C4ABE57A81FE3805EC0C271F855984E9F4A7A1D10053050A4DB7B6DEF778E",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 9160,
+        "Sha256": "ECDFF8B9BCA69E7C00CB498CB80FFE6265D165ECC3FB68D35F8F64B70F38E210"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 16684,
+        "Sha256": "4EDEC1017FEB3C80E0DE194FAE2C2D35D988265B4B338D754538335639C066BA"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 25536,
+        "Sha256": "988C02DE4D42BA5F9C13DC35C7B7C75BCE239904803EC57C2A4FBAD6ACC5C1F7"
+      }
+    ]
+  },
+  {
+    "Key": "1f986",
+    "Glyph": "\uD83E\uDD86",
+    "Label": "Утка",
+    "SourcePath": "assets/Duck/3D/duck_3d.png",
+    "SourceSha256": "C45934C5D609FC03E9713D66ADA5E08034B0B27BF29A37A39C726633B5C2D2E4",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 6688,
+        "Sha256": "3EDF9A1ABDA0D66A6FFAC49AD4731A25DD348F7A423754F05B0A8E70FBD09FAD"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 11361,
+        "Sha256": "C54224FC57AFDE884B17EDCD5172080FBE9E2954C6984D2FF4B469A8B6CD880B"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 17024,
+        "Sha256": "CA1A95FF90542620D6591EDA1E30D368C9AF552121C5BCD20938A4594A697BE2"
+      }
+    ]
+  },
+  {
+    "Key": "2764-fe0f",
+    "Glyph": "❤️",
+    "Label": "Красное сердце",
+    "SourcePath": "assets/Red heart/3D/red_heart_3d.png",
+    "SourceSha256": "7218CB9F08ED1EF38FCD83FE699A1125D07F50725F4C87A68CB7C9F4EFB3C32B",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 6284,
+        "Sha256": "D3B7137C6C91726D2E9543EFB0C5EF1B3C8761D3BFFA2073488B6C5BFB8357EF"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 10580,
+        "Sha256": "A60482D4EAA52DBFE36E32EFE0080179426D3ADC87FA29ED488DC2607BB7BF01"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 15902,
+        "Sha256": "451B4C5FB9E8E6D6E7C89D4115A8D252DABE1D53F9DADBEB12DE8A88530BCFA4"
+      }
+    ]
+  },
+  {
+    "Key": "1f525",
+    "Glyph": "\uD83D\uDD25",
+    "Label": "Огонь",
+    "SourcePath": "assets/Fire/3D/fire_3d.png",
+    "SourceSha256": "D56355132D73DF1741EDCF37CB4E21AD54F1C46EEB76FA17224607ABF4128C3F",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 5677,
+        "Sha256": "712122E0B84E90522336EE42B43AA451091DBA8936C1E13380ACC01772C1E74F"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 9774,
+        "Sha256": "DE5FCB1888281B0B2C2CFFA37BD0E1887106D73031461DE7F1E512F2C15007F0"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 14587,
+        "Sha256": "763A3723E8CA53E6A4022C1940C335478E80F98706A30DE7604731973B92EAA8"
+      }
+    ]
+  },
+  {
+    "Key": "1f469-200d-1f4bb",
+    "Glyph": "\uD83D\uDC69‍\uD83D\uDCBB",
+    "Label": "Женщина за компьютером",
+    "SourcePath": "assets/Woman technologist/Default/3D/woman_technologist_3d_default.png",
+    "SourceSha256": "1FE6D451F8A204530AD54D9FFF7AF3129B9E6F26181C691FA0BCB93D402663DC",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 6143,
+        "Sha256": "B1D55797CF63682AACE8E5F897EEA86436174115C3543F34A93F581C6FF1687A"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 11141,
+        "Sha256": "7BB6EE8824F1C26A2BAA53C74D370BAF9D671BF7537F5F91A764D44E6370355E"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 17103,
+        "Sha256": "74A09987856CA17187DC994199265AF4F6C4A6D3180D24850BCD3B05FF41B338"
+      }
+    ]
+  },
+  {
+    "Key": "1f44d",
+    "Glyph": "\uD83D\uDC4D",
+    "Label": "Палец вверх",
+    "SourcePath": "assets/Thumbs up/Default/3D/thumbs_up_3d_default.png",
+    "SourceSha256": "A48DBE89A1A16969593DB76F5BEC45E9E537E0F090E7609CAA8D9A3FF598D1D2",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 6251,
+        "Sha256": "AB1357B5F9B9DD21A074CF56FF544910585E5874071BBC9A3B681524E303F1A3"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 10505,
+        "Sha256": "963D354EEBD2B456E15CC6B6618C0C8ECBF4A2591463F9879460C33C9D44656E"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 15754,
+        "Sha256": "3B3C5A745B71DCCE71FAC02D0D96EB2899762FD8235D8059DA5800BC5B297023"
+      }
+    ]
+  },
+  {
+    "Key": "1f389",
+    "Glyph": "\uD83C\uDF89",
+    "Label": "Хлопушка",
+    "SourcePath": "assets/Party popper/3D/party_popper_3d.png",
+    "SourceSha256": "70A8E2F9DAF1646BE9E773751B7F3B6B281A2415CF29C3C3AEEBD9C923CDC3E0",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 9214,
+        "Sha256": "C997DDBB50A5C1BF7EEF180977580CA399EA6F645F484FCA0F8F11E0FF9300CD"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 16777,
+        "Sha256": "73DCCA489B2A2C5F11FD516491C49E50F38578053365D071DC96F02AEC481009"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 25111,
+        "Sha256": "293F4FB277E747040E51CD52C9CA389AE8F2B6C93EF4AD0F97F0A9E3F48E5554"
+      }
+    ]
+  },
+  {
+    "Key": "1f469-1f3fd-200d-1f4bb",
+    "Glyph": "\uD83D\uDC69\uD83C\uDFFD‍\uD83D\uDCBB",
+    "Label": "Программистка · средний тон",
+    "SourcePath": "assets/Woman technologist/Medium/3D/woman_technologist_3d_medium.png",
+    "SourceSha256": "1501547B3D5F83693822833E2368E661CA33721756A4A7205CBD93C70422D443",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 6138,
+        "Sha256": "DA9A9D49EA4549942FDC50FF5C7FD22D47E69EB2A769C87B09DB82949D8591E6"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 10951,
+        "Sha256": "12EFC539E3A57F784E6774CD78EE6F94592DC081A28D95A6EC3E6C20A67891AD"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 16703,
+        "Sha256": "AFB28D2C6D4E097F364DD1C6AD9CA6705D726EC9374AF03F0A67E24DF7C1AC20"
+      }
+    ]
+  },
+  {
+    "Key": "1f9d1-1f3fe-200d-1f680",
+    "Glyph": "\uD83E\uDDD1\uD83C\uDFFE‍\uD83D\uDE80",
+    "Label": "Космонавт · тёмный тон",
+    "SourcePath": "assets/Astronaut/Medium-Dark/3D/astronaut_3d_medium-dark.png",
+    "SourceSha256": "8295D9A737678C54B672A8620B79A29109595A3E5465F0889F8B99E5577AAB4B",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 7520,
+        "Sha256": "DB824B28822E60A12BD263538D762225F19FB574A8F9A99AD96E3D1EB2D99E9E"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 13158,
+        "Sha256": "EBB3DA9F2EAAD156C41D31AAE9AD7FA0B402922E3A6370B7BA2C8DF13AA035FD"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 19955,
+        "Sha256": "695FDEA179934D12C86A375A30A6164E00388892F6C0BCC14991657436117B91"
+      }
+    ]
+  },
+  {
+    "Key": "1f468-200d-1f692",
+    "Glyph": "\uD83D\uDC68‍\uD83D\uDE92",
+    "Label": "Мужчина-пожарный",
+    "SourcePath": "assets/Man firefighter/Default/3D/man_firefighter_3d_default.png",
+    "SourceSha256": "4638461A102F70F3AA728F377D47318A594CC9677BC2A8C502B4449111779143",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 7735,
+        "Sha256": "7C2AD028A2421349EACBFA1A095BC7AD1FAC053193CCBC9EAEA4257C185E50A2"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 13774,
+        "Sha256": "480D686C751785C06BCB0AD2B803092BF2B48E76E6EA952F622B6E3DC3D15E6C"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 20570,
+        "Sha256": "439D4D07D6AC8F2EFCAD50456F3FFE914C846ACD1A87A757DEBCE41859F2FF2F"
+      }
+    ]
+  },
+  {
+    "Key": "1f469-200d-1f9bc",
+    "Glyph": "\uD83D\uDC69‍\uD83E\uDDBC",
+    "Label": "Женщина в электроколяске",
+    "SourcePath": "assets/Woman in motorized wheelchair/Default/3D/woman_in_motorized_wheelchair_3d_default.png",
+    "SourceSha256": "C1B90D46B276471EFBE7AA42BD8560D9C036B253C04134362969E823C02B9E26",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 6683,
+        "Sha256": "63B75354B961C797D3B89938396D292E063493F8E96C94C0CADE1F8158395094"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 11797,
+        "Sha256": "C1E5E1C07C2537352954E6C67E36362174DBE0C22D5EC54563937E42A1292832"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 17626,
+        "Sha256": "BA6ED5CBA44D3419E21BBEB6813550E81D1CA61CF6E7689AA679F2F4BD237A40"
+      }
+    ]
+  },
+  {
+    "Key": "1f3f3-fe0f-200d-1f308",
+    "Glyph": "\uD83C\uDFF3️‍\uD83C\uDF08",
+    "Label": "Радужный флаг",
+    "SourcePath": "assets/Rainbow flag/3D/rainbow_flag_3d.png",
+    "SourceSha256": "D904057062DB58DB71685695AA552B7737A0349494FAED24F6B77BC518E29D06",
+    "SourceWidth": 256,
+    "SourceHeight": 256,
+    "Variants": [
+      {
+        "Size": 64,
+        "Width": 64,
+        "Height": 64,
+        "Bytes": 2840,
+        "Sha256": "E3D96F12BC8C1B5E93E3643F8952F625055E9CCF2833F48DBDB3C6558125C299"
+      },
+      {
+        "Size": 96,
+        "Width": 96,
+        "Height": 96,
+        "Bytes": 4563,
+        "Sha256": "3A76938F317B6761B8B3C5C5991161B41A82BDFF8B22709A83E8FFBBB85822D1"
+      },
+      {
+        "Size": 128,
+        "Width": 128,
+        "Height": 128,
+        "Bytes": 6965,
+        "Sha256": "41B364AF84DDE3BDCF2D2BAAE02B26EE2E6E8ACB73A02114FE8C880A934A180D"
+      }
+    ]
+  }
+]

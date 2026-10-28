@@ -1,0 +1,45 @@
+MED 1.0.0 license text provenance, 2026-10-28
+Original license bytes preserved. SPDX WTFPL follows NuGet license expressions for Emoji.Wpf 0.3.4 and Stfu 0.1.1.
+
+[
+  {
+    "File": "VirtualizingWrapPanel-2.5.2-LICENSE.txt",
+    "Source": "https://raw.githubusercontent.com/sbaeumlisberger/VirtualizingWrapPanel/7af1d2692cc1f4dd3739ed22e40677e5e387e55f/LICENSE",
+    "Sha256": "849E6087D42BF504BCEFE4C6FE01D7481123A8AFF14EED030B12528C4E6AE0B1"
+  },
+  {
+    "File": "Emoji.Wpf-and-Stfu-WTFPL.txt",
+    "Source": "https://raw.githubusercontent.com/spdx/license-list-data/main/text/WTFPL.txt",
+    "Sha256": "13D8825A59E5E546D41E8711405D0F335A9934362A47C04A3B4280FA7932DC4A"
+  },
+  {
+    "File": "emojibase-LICENSE.txt",
+    "Source": "https://raw.githubusercontent.com/milesj/emojibase/master/LICENSE",
+    "Sha256": "5C4E1582DCAE9429A5D00EC0A64185C3A711F9757B2308FDF275D90B120F6149"
+  },
+  {
+    "File": "emojilib-LICENSE.txt",
+    "Source": "https://raw.githubusercontent.com/muan/emojilib/main/LICENSE",
+    "Sha256": "DA00C2955742E85D06F80A34F5142F96A6167DF2D8762B2DC5A998C9F919A715"
+  },
+  {
+    "File": "dotnet-runtime-10.0.12-LICENSE.txt",
+    "Source": "NuGet microsoft.netcore.app.runtime.win-x64/10.0.12/LICENSE.TXT",
+    "Sha256": "D7A68596AB69B06F51CA278A6545148E4269A9381C26D597C13DF5D88E08CF5B"
+  },
+  {
+    "File": "dotnet-runtime-10.0.12-THIRD-PARTY-NOTICES.txt",
+    "Source": "NuGet microsoft.netcore.app.runtime.win-x64/10.0.12/THIRD-PARTY-NOTICES.TXT",
+    "Sha256": "6D15E10A101C6BFFF2AB4429ED061BF76C456FC4B23AD6B03E0D0F8377148A21"
+  },
+  {
+    "File": "dotnet-windowsdesktop-10.0.12-LICENSE.txt",
+    "Source": "NuGet microsoft.windowsdesktop.app.runtime.win-x64/10.0.12/LICENSE",
+    "Sha256": "A89886665765362EB77E0F8E26602C924520041D1711B2EEDC136434FE4D01AB"
+  },
+  {
+    "File": "Inno-Setup-7-LICENSE.txt",
+    "Source": "Inno Setup 7.1.0 installed license.txt (installer components only)",
+    "Sha256": "2E5346868C2A18434489824E11D65C3031620F792FEFC415D05F19CD441ABF5C"
+  }
+]

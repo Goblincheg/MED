@@ -31,10 +31,10 @@ namespace EmojiPicker
         // stays smooth instead of re-rendering the grid on every character
         private static readonly TimeSpan SearchDebounce = TimeSpan.FromMilliseconds(120);
 
-        private static readonly string RecentEmojisFile = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "ClassicEmojiPicker",
-            "recent.json");
+        private static string RecentEmojisFile => AppDataPaths.FilePath("recent.json");
+        private bool recentFileReadable = true;
+        internal string? DataWarning { get; private set; }
+        private bool recentSaveFailureReported;
 
         // Windows 10's seven picker categories, keyed by the Unicode group names
         // that Emoji.Wpf's EmojiData exposes ("Component" and "Flags" are excluded,
@@ -66,6 +66,7 @@ namespace EmojiPicker
 
         private readonly DispatcherTimer searchTimer;
         private List<Emoji> allEmojis = new List<Emoji>();
+        private readonly List<Emoji> catalogEmojis = new();
         private List<Emoji> recentEmojis = new List<Emoji>();
         private string currentCategory = DefaultCategoryKey;
         private bool isShowing;
@@ -441,15 +442,17 @@ namespace EmojiPicker
 
                     foreach (var emoji in subGroup.EmojiList)
                     {
-                        if (emoji.Renderable)
-                        {
-                            var normalized = NormalizeEmoji(emoji.Text);
-                            keywords.TryGetValue(normalized, out var tags);
-                            russian.TryGetValue(normalized, out var russianAnnotation);
-                            var rank = popularity.TryGetValue(normalized, out var tier) ? tier : UnrankedPopularity;
-                            allEmojis.Add(new Emoji(emoji.Text, emoji.Name, key, tags ?? string.Empty, rank,
-                                russianAnnotation?.Name ?? string.Empty, russianAnnotation?.Keywords));
-                        }
+                        // Preserve the complete Unicode catalog separately. An
+                        // unsupported system glyph becomes eligible if Fluent exists.
+                        var hasFluent = FluentEmojiImages.HasImage(emoji.Text);
+                        var normalized = NormalizeEmoji(emoji.Text);
+                        keywords.TryGetValue(normalized, out var tags);
+                        russian.TryGetValue(normalized, out var russianAnnotation);
+                        var rank = popularity.TryGetValue(normalized, out var tier) ? tier : UnrankedPopularity;
+                        var item = new Emoji(emoji.Text, emoji.Name, key, tags ?? string.Empty, rank,
+                            russianAnnotation?.Name ?? string.Empty, russianAnnotation?.Keywords);
+                        catalogEmojis.Add(item);
+                        if (hasFluent || emoji.Renderable) { allEmojis.Add(item); }
                     }
                 }
             }
@@ -463,7 +466,7 @@ namespace EmojiPicker
         {
             try
             {
-                var uri = new Uri($"pack://application:,,,/EmojiPicker;component/Resources/{fileName}");
+                var uri = new Uri($"pack://application:,,,/MED;component/Resources/{fileName}");
                 using var stream = Application.GetResourceStream(uri)?.Stream;
                 if (stream != null)
                 {
@@ -939,7 +942,7 @@ namespace EmojiPicker
                 var characters = JsonSerializer.Deserialize<List<string>>(File.ReadAllText(RecentEmojisFile));
                 if (characters == null)
                 {
-                    return;
+                    throw new JsonException("History must be a JSON array");
                 }
 
                 recentEmojis = characters
@@ -953,38 +956,41 @@ namespace EmojiPicker
             {
                 // A corrupt or unreadable recents file should never stop the app from starting
                 recentEmojis = new List<Emoji>();
+                recentFileReadable = false; // retain the original instead of overwriting it
+                DataWarning = "История MED не прочитана. Исходный файл recent.json сохранён и не будет перезаписан.";
             }
         }
 
         private void SaveRecentEmojis()
         {
+            if (!recentFileReadable) { return; }
             try
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(RecentEmojisFile)!);
                 var json = JsonSerializer.Serialize(recentEmojis.Select(item => item.Character));
 
-                // Write to a temp file then atomically swap it in, so a crash or
-                // power loss mid-write can't leave a truncated recent.json
-                var tmp = RecentEmojisFile + ".tmp";
-                File.WriteAllText(tmp, json);
-                if (File.Exists(RecentEmojisFile))
-                {
-                    File.Replace(tmp, RecentEmojisFile, null);
-                }
-                else
-                {
-                    File.Move(tmp, RecentEmojisFile);
-                }
+                AppDataPaths.WriteAtomic(RecentEmojisFile, json);
             }
-            catch (Exception)
+            catch (Exception error)
             {
-                // Losing the recents list is not worth interrupting the user for
+                Logger.LogAlways($"History save failed: {error.GetType().Name}");
+                if (!recentSaveFailureReported)
+                {
+                    recentSaveFailureReported = true;
+                    (Application.Current as App)?.ReportDataFailure();
+                }
             }
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             DismissPicker("close-button");
+        }
+
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            DismissPicker("settings-open");
+            (Application.Current as App)?.ShowSettings();
         }
 
         protected override void OnKeyDown(KeyEventArgs e)

@@ -1,0 +1,9 @@
+* text=auto
+*.cs text eol=crlf
+*.png binary
+*.ico binary
+
+# Preserve exact generated/provenance bytes across checkouts.
+/EmojiPicker/Resources/Fluent64/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+/licenses/*.txt -text -whitespace
+/prototypes/FluentEmojiComparison/licenses/*.txt -text -whitespace

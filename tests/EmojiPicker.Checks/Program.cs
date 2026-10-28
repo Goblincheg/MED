@@ -8,11 +8,13 @@ internal static class Program
     private static int checks;
 
     [STAThread]
-    private static int Main()
+    private static int Main(string[] args)
     {
+        if (args.Length >= 3 && args[0] == "--startup-check") { return ReleaseStartupChecks.Run(args); }
         try
         {
-            var app = new App(); // no Run/OnStartup: no tray, hooks, or app launch
+            var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown }; // never invoke MED's startup or global hooks
+            ReleaseChecks.Run(Check); // isolated user-data roots; fake autostart store only
             Emoji.Wpf.EmojiData.Load();
             var russian = Resource<RussianAnnotation>("keywords.ru.json");
             var keywords = Resource<string>("keywords.json");
@@ -25,14 +27,14 @@ internal static class Program
             Console.WriteLine($"Catalog: {catalog.Count}; Russian coverage: {catalog.Count - missing.Count}/{catalog.Count}");
             foreach (var item in missing) { Console.WriteLine($"MISSING: {item.Text} {item.Name}"); }
             Check(missing.Count == 0, "full catalog has Russian annotations");
-            var emojis = catalog.Where(item => item.Renderable).Select(item =>
+            var emojis = catalog.Where(item => FluentEmojiImages.HasImage(item.Text) || item.Renderable).Select(item =>
             {
                 var key = Key(item.Text);
                 russian.TryGetValue(key, out var ru);
                 return new EmojiPicker.Emoji(item.Text, item.Name, "", keywords.GetValueOrDefault(key, ""),
                     popularity.GetValueOrDefault(key, 99), ru?.Name ?? "", ru?.Keywords);
             }).ToList();
-            Console.WriteLine($"Renderable on this Windows: {emojis.Count}");
+            Console.WriteLine($"System renderable: {catalog.Count(item => item.Renderable)}; displayable: {emojis.Count}");
             InsertionStressChecks.RunAsync(emojis, Check).GetAwaiter().GetResult();
             ForegroundTransitionChecks.RunAsync(emojis[0], Check).GetAwaiter().GetResult();
 
@@ -90,13 +92,15 @@ internal static class Program
             // Instantiate actual compiled XAML, without showing or taking focus.
             app.Resources.MergedDictionaries.Add(new ResourceDictionary
             {
-                Source = new Uri("pack://application:,,,/EmojiPicker;component/Theme/LightTheme.xaml")
+                Source = new Uri("pack://application:,,,/MED;component/Theme/LightTheme.xaml")
             });
+            ReleaseChecks.History(Check);
             var window = new MainWindow();
             var loaded = (List<EmojiPicker.Emoji>)typeof(MainWindow).GetField("allEmojis", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(window)!;
             Check(loaded.Count == emojis.Count, "compiled window catalog");
             Check(EmojiSearch.Find(loaded, "уточка").Any(item => item.Character == "🦆"), "compiled window uses Russian resource");
             Check(!window.IsPickerOpen, "no insertion session before open");
+            FluentGraphicsChecks.Run(window, loaded, Check);
             typeof(MainWindow).GetMethod("CommitEmoji", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, [loaded[0]]);
             Check(!window.IsVisible, "hidden picker ignores stale commits");
 
@@ -203,7 +207,7 @@ internal static class Program
     }
     private static Dictionary<string, T> Resource<T>(string file)
     {
-        using var stream = Application.GetResourceStream(new Uri($"pack://application:,,,/EmojiPicker;component/Resources/{file}"))!.Stream;
+        using var stream = Application.GetResourceStream(new Uri($"pack://application:,,,/MED;component/Resources/{file}"))!.Stream;
         return JsonSerializer.Deserialize<Dictionary<string, T>>(stream)!;
     }
 }

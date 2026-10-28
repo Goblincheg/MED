@@ -1,306 +1,121 @@
-<img align="right" src="https://visitor-badge.laobi.icu/badge?page_id=platima.cep" height="20" />
+# MED — Mikhalych Emoji Dock (Мёд)
 
-# Classic Emoji Picker
+**MED — панель эмодзи для Windows с поиском на русском языке.**
+Russian and English emoji search, Fluent Emoji 3D, and repeated insertion without closing the panel.
 
-[![Build](https://github.com/platima/Classic-EmojiPicker/actions/workflows/build.yml/badge.svg)](https://github.com/platima/Classic-EmojiPicker/actions/workflows/build.yml)
-[![Release](https://github.com/platima/Classic-EmojiPicker/actions/workflows/release.yml/badge.svg)](https://github.com/platima/Classic-EmojiPicker/actions/workflows/release.yml)
-[![Latest Release](https://img.shields.io/github/v/release/platima/Classic-EmojiPicker)](https://github.com/platima/Classic-EmojiPicker/releases/latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+## ⬇️ СКАЧАТЬ MED / DOWNLOAD MED
 
-A lightweight, standalone recreation of the Windows 10 emoji picker for Windows 11 users who prefer the simpler, cleaner interface without GIFs and bloated features.
+### [MED Setup — Windows x64](https://github.com/Goblincheg/MED/releases/latest/download/MED-Setup-x64.exe)
+### [MED Portable — Windows x64](https://github.com/Goblincheg/MED/releases/latest/download/MED-Portable-x64.zip)
 
-<p align="center">
-  <img src="Screenshot.png" alt="Classic Emoji Picker in dark mode showing the Smiley faces and animals category, with the search box, emoji grid, and category tabs" width="360">
-</p>
+Готовые приложения, не архивы исходников. Обе сборки автономные: .NET 10 включён.
+Ready-to-run applications, not source archives. Both builds include the .NET 10 runtime.
 
-## ✅ Current Status: v0.1.9 - Working Release
+[Заметки релиза / Release notes](https://github.com/Goblincheg/MED/releases/tag/v1.0.0) · [English ↓](#english)
 
-This version includes core functionality and is ready for daily use:
+## 🇷🇺 Возможности
 
-- ✅ **Replaces Win+.** - takes over the emoji shortcut so it opens this picker instead of the built-in panel
-- ✅ **Full Unicode emoji set** (~1,400 emoji) in the original seven Windows 10 categories
-- ✅ **Opens where you're typing** - anchors to the text caret (mouse pointer fallback), like the Windows 10 panel
-- ✅ **Direct insertion** - the selected emoji is typed into the app you were using
-- ✅ **Dark mode** - automatically follows the Windows light/dark setting
-- ✅ **English and Russian search** (e.g. "splash" finds 💦, "уточка" finds 🦆), focused and ready as soon as the picker opens
-- ✅ **Keyboard driven** - arrow keys move the selection, Tab/Shift+Tab switch category, Enter inserts, ESC closes
-- ✅ **Installer** with optional start-with-Windows
+- **Русский и английский поиск**: названия, ключевые слова, русские синонимы и разговорные выражения — например, `уточка`, `ржу`, `палец вверх`. Регистр и различие е/ё не мешают поиску; перевода через сеть нет.
+- **Win + .** открывает панель там, где ты вводишь текст. Esc и клик снаружи закрывают её.
+- **Microsoft Fluent Emoji 3D**: 1545 изображений 64 px, системный fallback, виртуализированная сетка с ограниченным кешем.
+- **Множественная вставка**: выбирай эмодзи последовательно или повторно, панель остаётся открытой. Получатель проверяется, буфер обмена защищён.
+- **История использования**, светлая и тёмная темы.
+- **Фоновая работа без обязательного значка в трее**. Шестерёнка в панели открывает настройки, включая «Показывать значок в трее» и «Выход из MED».
+- **Автозагрузка Windows**: включена по умолчанию в Setup, выключена по умолчанию в portable; управляется в настройках.
 
-## Features
+## Совместимость
 
-- **Clean Windows 10 Design** - Faithful recreation of the original Windows 10 emoji picker interface
-- **Win+. Takeover** - Runs quietly in the system tray and opens on Win+. in place of the Windows 11 panel
-- **The Original Seven Categories** - Recent, Smiley faces & animals, People, Celebrations & objects, Food & plants, Transportation & places, Symbols
-- **Full Emoji Set** - Every renderable Unicode emoji from the database bundled with Emoji.Wpf (flags excluded, as in the Windows 10 picker)
-- **Direct Insertion** - Picking an emoji types it into the previously focused window; reports failure when the original target cannot be validated
-- **Dark Mode** - Follows the system theme automatically and switches live when you change it
-- **Recent Emojis** - Recently used emojis are remembered between sessions
-- **Real-time Search** - Search English names/tags and Russian CLDR names/keywords with local synonyms; case and е/ё are ignored
-- **Keyboard Navigation** - Arrow keys move the highlighted emoji, Tab/Shift+Tab switch category, Enter inserts, ESC closes
-- **Lightweight** - No unnecessary features, GIFs, or bloat; idles in the tray at ~20 MB
-- **True Colour Emoji** - Rendered with [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) using the system Segoe UI Emoji font
+**Windows 10 x64 — основная целевая система, работоспособность проверена.**
 
-## Requirements
+**Windows 11 — пока не тестировалась. Совместимость не гарантируется.**
 
-- Windows 11 (or Windows 10 version 1809+)
-- The full installer is self-contained - no separate .NET runtime is required (the lite installer needs the [.NET Desktop Runtime 10 x64](https://dotnet.microsoft.com/download/dotnet/10.0))
-- For building from source: .NET SDK 10.0.401 (command-line build)
+## Установка и первый запуск
 
-## Installation
+**Setup:** скачай EXE по ссылке выше. Установка выполняется для текущего пользователя в `%LOCALAPPDATA%\Programs\MED`, без обязательного UAC и отдельной установки runtime. Автозагрузку можно отключить в установщике или настройках. Ярлыки создаются в меню «Пуск», на рабочем столе — нет. Данные находятся в `%APPDATA%\MED`; при удалении сохраняются.
 
-### Option 1: Installer (recommended)
+**Portable:** распакуй весь ZIP в доступный для записи каталог и запусти `MED.exe`. Оставь `portable.txt` рядом с EXE. Настройки и история сохраняются в `Data`. Не запускай приложение прямо из ZIP. Перед переносом отключи автозагрузку; в новом расположении её можно включить заново для исправления пути.
 
-1. Download an installer from the [Releases](../../releases) page (artifacts are named `Classic-EmojiPicker-v<version>-<type>-win-x64.<ext>`):
-   - `Classic-EmojiPicker-v<version>-setup-win-x64.exe` - **full**: includes the .NET runtime, needs nothing else (larger download)
-   - `Classic-EmojiPicker-v<version>-setup-lite-win-x64.exe` - **lite**: much smaller, but requires the [.NET Desktop Runtime 10 (x64)](https://dotnet.microsoft.com/download/dotnet/10.0) to be installed (setup checks for it and offers the download page if it's missing)
-   - `Classic-EmojiPicker-v<version>-setup-win-x64.msi` - **MSI**: self-contained, installs per-machine; made for silent/enterprise deployment (see below)
-2. Run it. The Setup.exe installers ask whether to install for **all users** (elevates, installs to Program Files) or **just you** (no administrator prompt).
-3. Tick **Start with Windows** when asked so Win+. works after every sign-in.
+После запуска MED работает в фоне, панель и постоянный значок по умолчанию скрыты. Нажми **Win + .**, затем шестерёнку для настроек. Команда **«Выход из MED»** освобождает перехват и возвращает штатную панель Windows. Настройки можно открыть также командой `MED.exe --settings`.
 
-<details>
-<summary><strong>Silent / scripted installs</strong></summary>
+Перед переходом с Classic Emoji Picker заверши старую копию и отключи её автозагрузку через её меню. Настройки и история копируются в MED без удаления оригиналов. Если portable Data недоступен для записи, MED явно сообщает о резервном каталоге; точный путь показан в настройках.
 
-Setup.exe (Inno Setup):
+[Подробная инструкция](docs/MED-1.0.0-README.txt)
+
+## Известные ограничения
+
+- При экстремально быстрых кликах иногда появляется предупреждение о невозможности безопасной вставки.
+- Windows 11 пока не тестировалась; совместимость не гарантируется.
+- Внешний вид вставленных Unicode-эмодзи зависит от приложения-получателя и системных шрифтов. Вставка в повышенные приложения может быть запрещена Windows.
+- Установщик не имеет цифровой подписи; Windows SmartScreen может показывать предупреждение.
+- Шесть нестандартных ninja-cat последовательностей остаются скрытыми: для них нет подходящего Fluent-изображения и системного glyph.
+- При предупреждении скрытый значок может временно появиться для уведомления.
+
+## Сборка из исходников
+
+Нужны Windows x64, .NET SDK **10.0.401**, а для Setup — установленный **Inno Setup 7**. Сторонние инструменты автоматически не устанавливаются.
 
 ```powershell
-# Per-user, silent, with start-with-Windows:
-Classic-EmojiPicker-v<version>-setup-win-x64.exe /VERYSILENT /SUPPRESSMSGBOXES /CURRENTUSER /TASKS=startup
-
-# All users (run from an elevated shell for unattended use):
-Classic-EmojiPicker-v<version>-setup-win-x64.exe /VERYSILENT /SUPPRESSMSGBOXES /ALLUSERS /TASKS=startup
+powershell -NoProfile -ExecutionPolicy Bypass -File tools/Build-MEDRelease.ps1
 ```
 
-MSI (per-machine; ideal for Intune/GPO/scripts):
+ExecutionPolicy здесь относится только к дочернему процессу PowerShell и не меняет системную политику. Скрипт выполняет проверки, создаёт self-contained публикацию и ZIP, собирает Setup при наличии ISCC. Результаты — в `artifacts/releases`. Установку и изменение реальной автозагрузки скрипт не выполняет.
 
-```powershell
-msiexec /i Classic-EmojiPicker-v<version>-setup-win-x64.msi /qn            # install + start-with-Windows
-msiexec /i Classic-EmojiPicker-v<version>-setup-win-x64.msi /qn AUTOSTART=0  # without the Run key
-msiexec /x Classic-EmojiPicker-v<version>-setup-win-x64.msi /qn            # uninstall
-```
+Подготовленные 64 px ресурсы уже включены в репозиторий. Вся коллекция Microsoft не нужна для обычной сборки. Для повторной генерации скачай официальный [Fluent Emoji](https://github.com/microsoft/fluentui-emoji), распакуй в `external/fluentui-emoji-main` и следуй [инструкции генератора](tools/FluentEmojiResources/README.md). Коллекция, пользовательские данные и артефакты сборки исключены из Git. Trimming отключён.
 
-Note: in an all-users/MSI install, autostart lives in HKLM. The tray icon's "Start with Windows" toggle manages a per-user (HKCU) entry independently; if both are set the second startup is a no-op (single-instance).
+## English
 
-</details>
+**MED is an emoji picker for Windows with Russian-language search.**
 
-> **"Windows protected your PC" / SmartScreen warning?** The downloads aren't code-signed yet, so Windows may warn about an unrecognised app. Two ways past it:
-> - **At the prompt:** click **More info**, then **Run anyway**.
-> - **Before running:** right-click the downloaded file → **Properties** → tick **Unblock** (bottom of the General tab) → **OK**, then run it.
->
-> The files are safe; this is Windows being cautious about new, unsigned downloads. Code signing is planned to remove the warning.
+### Features
 
-Classic Emoji Picker then lives in the system tray. Press **Win+.** anywhere to open it. Right-click the tray icon for **Open Emoji Picker**, a **Start with Windows** toggle, a **Debug logging** toggle (writes a diagnostic log to `%APPDATA%\ClassicEmojiPicker\debug.log` if you ever need to troubleshoot), and **Exit**.
+- Russian and English names, keywords, Russian synonyms and colloquial expressions. Case-insensitive search with е/ё normalization; no online translation.
+- Open with **Win + .**; close with Esc or an outside click.
+- **Microsoft Fluent Emoji 3D**, system fallback and a virtualized grid with a bounded image cache.
+- Insert multiple emojis without closing the panel. The original recipient is validated and clipboard contents are protected.
+- Recent history, light/dark themes, background operation without a mandatory tray icon.
+- Open settings using the panel's gear button. Show/hide the tray icon, manage Windows startup, or choose **Exit MED** to restore the standard Windows shortcut.
+- Setup and portable editions, both self-contained with .NET 10 included.
 
-> **Restoring the built-in panel:** while Classic Emoji Picker is running it intercepts Win+.. Choose **Exit** from the tray icon (and untick Start with Windows) to hand the shortcut back to Windows.
+### Compatibility
 
-### Option 2: Build from Source
+**Windows 10 x64 — primary target platform, tested and working.**
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/platima/Classic-EmojiPicker.git
-   cd Classic-EmojiPicker
-   ```
+**Windows 11 — not yet tested. Compatibility is not guaranteed.**
 
-2. **Open in Visual Studio:**
-   - Open `Classic-EmojiPicker.sln` in Visual Studio
-   - Build → Build Solution (Ctrl+Shift+B)
-   - Run → Start Debugging (F5)
+### Install and run
 
-3. **Alternative - Visual Studio Code:**
-   - Open the project folder in VS Code
-   - Use the .NET build commands or integrated terminal
+**Setup:** use the prominent download link above. Installs for the current user into `%LOCALAPPDATA%\Programs\MED` without requiring elevation. Startup is enabled by default and can be disabled. Start-menu shortcuts are created; no desktop shortcut. User data lives in `%APPDATA%\MED` and is retained on uninstall.
 
-## Usage
+**Portable:** extract the entire ZIP into a writable directory and run `MED.exe`. Keep `portable.txt` alongside it; data is stored in `Data`. Startup is off by default. Disable startup before moving the folder, then enable it from the new location to repair the path. A clearly reported AppData fallback is used if local Data is unwritable.
 
-1. In any app, press **Win+.** (or double-click the tray icon) to open the picker at your text caret (falling back to the mouse pointer when the app doesn't expose a caret)
-2. **Type** to search - the search box is focused from the start
-3. **Browse** categories with **Tab / Shift+Tab** (or click the tabs at the bottom); move the highlight with the arrow keys
-4. **Press Enter** (or click an emoji) to insert it into the app you were using
-5. Keep selecting emojis: the panel remains open and inserts into the original target. If that target cannot be validated, a tray warning reports the failure.
-
-The picker stays open after insertion, preserving the current search and selection. Click outside, press ESC, or press Win+. again to close it. Recently used emojis are saved to `%APPDATA%\ClassicEmojiPicker\recent.json` and shown in the Recent tab 🕒. Data provenance, automated checks and the Windows 10 manual checklist are in [docs/RUSSIAN-SEARCH.md](docs/RUSSIAN-SEARCH.md).
-
-## Settings
-
-Settings live in `%APPDATA%\ClassicEmojiPicker\settings.json` (created with defaults on first run). Edit it in any text editor and restart the app to apply.
-
-### `emojiInsertMode` - how emoji are inserted
-
-Some emoji are a single character, but many are **joined sequences** - e.g. 🤷‍♂️ is a person + an invisible joiner + the male sign, and flags/skin-tone variants work the same way. Typed as individual keystrokes, these split apart in some apps (notably Chromium/Electron ones like WhatsApp, Discord, Slack), showing the pieces separately. Pasting them instead makes the app compose them correctly.
-
-| Value | Behaviour |
-|---|---|
-| `hybrid` *(default)* | Types simple emoji (works everywhere, no clipboard use) and **pastes** joined ones (ZWJ sequences, flags, skin-tone variants). Best of both. |
-| `paste` | Always inserts via the clipboard (Ctrl+V). Most reliable composition, but every insert briefly uses the clipboard and needs the target to accept Ctrl+V. |
-| `keystroke` | Always types; never touches the clipboard. Joined emoji may split in some apps. |
-
-### `pasteRestoreDelayMs` - paste restore timing
-
-When a joined emoji is pasted, the app briefly puts it on the clipboard, sends Ctrl+V, waits, then restores your previous clipboard. The wait defaults to **250 ms**. On slow or remote sessions (RDP/Citrix) the target may read the clipboard later than that, restoring your old content before the emoji is read - raise this value if pasted emoji occasionally come out as your previously-copied text. Clamped to 50-5000 ms.
-
-```json
-{
-  "emojiInsertMode": "hybrid",
-  "pasteRestoreDelayMs": 250
-}
-```
-
-> When an emoji is pasted, it briefly goes on the clipboard and Ctrl+V is sent; your **entire** previous clipboard (text **and** non-text like images or copied files) is snapshotted and restored afterwards. Both the paste and the restore are tagged to stay out of **Clipboard History (Win+V)**, Cloud Clipboard, and clipboard managers, so it doesn't pollute your history stack. Use `keystroke` mode if you never want the clipboard touched at all.
-
-## How the Win+. takeover works
-
-The app installs a low-level keyboard hook that catches Win+. before the Windows shell does, opens this picker, and swallows the keystroke so the built-in panel doesn't also appear. This means the app must be running (it sits in the tray) for the shortcut to work - the installer's **Start with Windows** option keeps it available after every sign-in.
+MED starts in the background with no picker window or permanent tray icon. Press **Win + .** and use the gear button for settings or exit; `MED.exe --settings` also works. Close any old Classic Emoji Picker instance and disable its startup first. Existing settings/history are copied without deleting the originals.
 
 ### Known limitations
 
-- **Elevated (run-as-administrator) apps**: input delivery and hooks are subject to Windows security boundaries. Insertion into an elevated target from a non-elevated picker is refused with a tray warning; it does not replace clipboard contents as a fallback.
-- **Caret anchoring** relies on the target app exposing a system caret; apps that don't (some frameworks) fall back to opening at the mouse pointer.
+- Extremely fast clicks may occasionally trigger a safe-insertion warning.
+- Windows 11 has not been tested; compatibility is not guaranteed.
+- Inserted Unicode emojis are rendered by the receiving application and its fonts, not by MED's images. Windows may block insertion into elevated applications.
+- The installer is unsigned; Windows SmartScreen may display a warning.
+- Six nonstandard ninja-cat sequences remain hidden. A hidden tray icon may appear temporarily for a warning notification.
 
-## Emoji Rendering
+### Build
 
-Colour emoji rendering is handled by the [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) library, which uses the system's Segoe UI Emoji font (present on all supported versions of Windows). No bundled fonts are required.
+Windows x64, .NET SDK 10.0.401 and Inno Setup 7 are required for the full build. Run the PowerShell command above. No system tools are installed automatically. Generated 64 px resources are committed; the complete upstream Microsoft collection is only needed to regenerate them.
 
-## Development
+## Происхождение / Credits and licences
 
-### Project Structure
-```
-EmojiPicker/
-├── MainWindow.xaml(.cs)     # Picker UI + emoji/keyboard/insertion logic
-├── App.xaml(.cs)           # Tray host: single instance, hook, theme, lifecycle
-├── HotkeyListener.cs       # Global Win+. keyboard hook (WH_KEYBOARD_LL)
-├── TextInjector.cs         # Types the emoji into the previously focused window
-├── ThemeManager.cs         # Follows the Windows light/dark setting
-├── Theme/                  # LightTheme.xaml / DarkTheme.xaml brush dictionaries
-├── Resources/app.ico       # Application + tray icon
-└── Properties/AssemblyInfo.cs
-installer/
-└── EmojiPicker.iss         # Inno Setup script (built in the release workflow)
-```
+**Based on Classic Emoji Picker by Platima.** [Original repository](https://github.com/platima/Classic-EmojiPicker).
 
-### Code Quality & Standards
+MED preserves the original project's copyright and MIT licence. Source history is retained without rewriting. Внутренние namespace и путь `EmojiPicker/EmojiPicker.csproj` сохранены; имя приложения и EXE — MED.
 
-The project follows enterprise-grade code quality practices:
+[MIT / LICENSE](LICENSE) · [Third-party notices](THIRD-PARTY-NOTICES.md) · [Full licence texts](licenses/)
 
-#### **Formatting & Style**
-- **EditorConfig** (`.editorconfig`) - Enforces consistent code formatting
-- **C# Conventions** - PascalCase naming, 4-space indentation
-- **Auto-formatting** - `dotnet format` for automatic code cleanup
+Microsoft Fluent Emoji is MIT-licensed. System fonts are not redistributed.
 
-#### **Code Analysis**
-- **Static Analysis** - .NET analyzers enabled with latest rules
-- **Build Validation** - Warnings and errors caught during build
-- **Performance Checks** - Memory and startup optimisation validation
+### Техническая документация / Technical documentation
 
-#### **Quality Assurance Tools**
-```powershell
-# Local code quality check (equivalent to cppcheck)
-.\code-quality-simple.ps1
-
-# Auto-fix formatting issues
-dotnet format
-
-# Manual detailed analysis
-dotnet build --configuration Release --verbosity normal
-```
-
-#### **CI/CD Integration**
-- **GitHub Actions** - Automated build and quality checks
-- **Release Workflow** - Quality gates before releases
-- **Format Verification** - Prevents improperly formatted code
-
-### Emoji Data
-
-The emoji list is not hardcoded: it comes from the Unicode emoji database embedded in Emoji.Wpf (`EmojiData.AllGroups`), filtered to emoji the system font can render.
-
-### Categories
-
-The Unicode groups are mapped onto the original Windows 10 categories in `GroupToCategory` in `MainWindow.xaml.cs`:
-- 🕒 **Recent** - Most recently used (persisted)
-- 😀 **Smileys** - Smileys & Emotion + Animals & Nature
-- 👤 **People** - People & Body
-- 🎉 **Celebrations** - Activities + Objects
-- 🍕 **Food** - Food & Drink + plants
-- 🚗 **Transport** - Travel & Places
-- ♥️ **Symbols** - Symbols
-
-Flags are excluded, matching the Windows 10 picker.
-
-## Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-### **Development Setup**
-1. Fork the repository
-2. Clone your fork: `git clone https://github.com/platima/Classic-EmojiPicker.git`
-3. Use the .NET 10 CLI or an IDE with .NET 10 support
-4. Ensure .NET 10 SDK is installed
-
-### **Code Quality Standards**
-Before submitting, ensure your code meets quality standards:
-
-```powershell
-# Run full quality check
-.\code-quality-simple.ps1
-
-# Fix formatting automatically
-dotnet format
-
-# Build and test
-dotnet build --configuration Release
-```
-
-### **Contribution Workflow**
-1. Create a feature branch (`git checkout -b feature/amazing-feature`)
-2. Make your changes following the coding standards
-3. Run code quality checks locally
-4. Commit your changes (`git commit -m 'Add amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
-
-### **Pull Request Guidelines**
-- ✅ Code quality checks must pass
-- ✅ Follow existing code style (enforced by EditorConfig)
-- ✅ Add appropriate comments and documentation
-- ✅ Keep changes focused and atomic
-- ✅ Update CHANGELOG.md if needed
-
-### **Code Style**
-- **Language**: C# with modern features
-- **Formatting**: Enforced by `.editorconfig` and `dotnet format`
-- **Naming**: PascalCase for public members, camelCase for private
-- **Comments**: Australian English, clear and concise
-- **Performance**: Keep the resident (idle-in-tray) footprint modest
-
-## Roadmap
-
-### v0.2.0 (Next Release)
-- [x] Add more emoji categories (Animals, Food, Travel, etc.)
-- [x] Expand emoji database with more emojis
-- [x] Improved error handling and user feedback (crash-surviving resident app, opt-in debug logging)
-
-### v0.3.0 (Future)
-- [x] Global hotkey support (Win+. replacement)
-- [x] Dark mode
-- [x] Installer/packaging for easy distribution
-- [x] Auto-start with Windows option
-- [ ] Skin tone modifiers for people emojis
-- [x] Search by keyword/alias (matches emoji names and keyword tags)
-
-### v1.0.0 (Stable Release)
-- [ ] Settings/preferences window
-- [ ] Configurable hotkey
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. Third-party components and their licences are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
-
-## Acknowledgments
-
-- Original Windows 10 emoji picker design by Microsoft
-- Colour emoji rendering by [Emoji.Wpf](https://github.com/samhocevar/emoji.wpf) (Sam Hocevar)
-- Grid virtualization by [VirtualizingWrapPanel](https://github.com/sbaeumlisberger/VirtualizingWrapPanel) (S. Bäumlisberger)
-- Search keyword data from [emojibase](https://github.com/milesj/emojibase) (MIT), derived from Unicode CLDR
-- Built with WPF and .NET 10.0
-
-## Why This Project?
-
-Windows 11's emoji picker became bloated with GIFs, reactions, and other features that many users don't need. This project brings back the simple, clean interface of Windows 10's emoji picker for users who just want to quickly find and copy emojis.
+- [Русский поиск / Russian search data](docs/RUSSIAN-SEARCH.md)
+- [Fluent integration](docs/FLUENT-EMOJI-INTEGRATION.md)
+- [Resource generator](tools/FluentEmojiResources/README.md)
+- [Setup build and validation](docs/MED-1.0.0-SETUP.md)
+- [User guide](docs/MED-1.0.0-README.txt)

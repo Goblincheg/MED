@@ -386,3 +386,16 @@ w10.png
 
 # Local upstream Fluent Emoji collection (audit/reference only)
 external/fluentui-emoji-main/
+
+# Local manual-test installation and portable user data (never publish)
+/MED-Test/
+/Data/
+/portable.txt
+/settings.json
+/recent.json
+/debug.enabled
+.env
+.env.*
+*.pem
+*.key
+*.p12
