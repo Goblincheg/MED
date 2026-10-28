@@ -3,15 +3,14 @@
 **MED — панель эмодзи для Windows с поиском на русском языке.**
 Russian and English emoji search, Fluent Emoji 3D, and repeated insertion without closing the panel.
 
-## ⬇️ СКАЧАТЬ MED / DOWNLOAD MED
+## 📦 Релизы / Releases
 
-### [MED Setup — Windows x64](https://github.com/Goblincheg/MED/releases/latest/download/MED-Setup-x64.exe)
-### [MED Portable — Windows x64](https://github.com/Goblincheg/MED/releases/latest/download/MED-Portable-x64.zip)
+Готовые сборки MED доступны в разделе Releases этого репозитория.
+Setup и Portable предназначены для Windows 10 x64.
 
-Готовые приложения, не архивы исходников. Обе сборки автономные: .NET 10 включён.
-Ready-to-run applications, not source archives. Both builds include the .NET 10 runtime.
+Ready-to-run MED builds are available in the repository's Releases section.
+Setup and Portable are intended for Windows 10 x64.
 
-[Заметки релиза / Release notes](https://github.com/Goblincheg/MED/releases/tag/v1.0.0) · [English ↓](#english)
 
 ## 🇷🇺 Возможности
 
